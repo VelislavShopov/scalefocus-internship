@@ -1,4 +1,4 @@
-namespace ScalefocusInternship
+namespace UserAPI
 {
     public class WeatherForecast
     {

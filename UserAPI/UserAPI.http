@@ -1,6 +1,6 @@
-@ScalefocusInternship_HostAddress = http://localhost:5159
+@UserAPI_HostAddress = http://localhost:5116
 
-GET {{ScalefocusInternship_HostAddress}}/weatherforecast/
+GET {{UserAPI_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
