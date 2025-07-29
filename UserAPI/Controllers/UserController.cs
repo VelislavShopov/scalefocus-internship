@@ -27,7 +27,7 @@ namespace UserAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateUser([FromBody] UserDTO userDTO)
+        public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
             await _userService.CreateUser(userDTO);
             return Created();
@@ -63,10 +63,6 @@ namespace UserAPI.Controllers
            
         }
         
-        //Task в контролера за имплементиране на login service.
-        //Оставих още коментари във файловете User и UserDTO в DTOs и Models.
-        //Засега не съм имплементирал токени.
-        //Не мога да тествам, тъй като няма логика за създаване.
 
         [HttpPost("login")]
         public async Task<ActionResult<bool>> Login(LoginUserDTO request)
@@ -79,6 +75,7 @@ namespace UserAPI.Controllers
 
             }
 
+            // result trqbwa da stane tokena
 
             return Ok(result);
 

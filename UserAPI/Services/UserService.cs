@@ -20,7 +20,7 @@ namespace UserAPI.Services
             return await _userRepository.GetAllUsers();
         }
 
-        public async Task CreateUser(UserDTO user)
+        public async Task CreateUser(CreateUserDTO user)
         {
             // creation logic here
             var newUser = new User()

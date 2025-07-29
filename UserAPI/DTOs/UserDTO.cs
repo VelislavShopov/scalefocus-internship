@@ -1,6 +1,6 @@
 ﻿namespace UserAPI.DTOs
 {
-    public class UserDTO
+    public class CreateUserDTO
     {
         //Да добавим username? -Георги Станков
         public string Username { get; set; }
