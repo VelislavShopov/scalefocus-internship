@@ -1,5 +1,6 @@
 ﻿using UserAPI.Models;
 using UserAPI.Repositories;
+using UserAPI.DTOs;
 
 namespace UserAPI.Services
 {
@@ -17,9 +18,10 @@ namespace UserAPI.Services
             return await _userRepository.GetAllUsers();
         }
 
-        public async Task CreateUser(User user)
+        public async Task CreateUser(UserDTO user)
         {
-            await _userRepository.CreateUser(user);
+            // creation logic here
+            
         }
 
         public async Task DeleteUser(int id)

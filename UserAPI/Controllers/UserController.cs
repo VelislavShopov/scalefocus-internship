@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
-using UserAPI.Models;
+using UserAPI.DTOs;
 using UserAPI.Services;
+using UserAPI.Models;
+using UserAPI.Utils;
 
 namespace UserAPI.Controllers
 {
@@ -26,9 +28,11 @@ namespace UserAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateUser([FromBody] User user)
+        public async Task<ActionResult> CreateUser([FromBody] UserDTO userDTO)
         {
-            await _userService.CreateUser(user);
+            PasswordHasher.CreatePasswordHash(userDTO.Password, out var hash, out var salt);
+            Console.WriteLine(PasswordHasher.VerifyPasswordHash(userDTO.Password,hash,salt));
+            // creation logic here
             return Created();
         }
 
