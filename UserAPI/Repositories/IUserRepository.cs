@@ -7,8 +7,10 @@ namespace UserAPI.Repositories
         Task<List<User>> GetAllUsers();
         Task CreateUser(User user);
 
-        Task DeleteUser(int id);
+        Task DeleteUser(Guid id);
 
-        Task<User> GetUser(int id);
+        Task<User> GetUser(Guid id);
+
+        Task<User> GetUserByUsername(string username);
     }
 }

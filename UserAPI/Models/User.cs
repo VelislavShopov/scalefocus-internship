@@ -10,6 +10,9 @@ namespace UserAPI.Models
         //Да добавим username? -Георги Станков
 
         [Required]
+        public string Username { get; set; }
+
+        [Required]
         public string FirstName { get; set; }
 
         [Required]
@@ -19,7 +22,6 @@ namespace UserAPI.Models
         public string Email { get; set; }
 
 
-        public byte[] PasswordHash { get; set; } // hash + salt
-        public byte[] PasswordSalt { get; set; }
+        public string PasswordHash { get; set; }
     }
 }

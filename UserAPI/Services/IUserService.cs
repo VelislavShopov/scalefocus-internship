@@ -9,11 +9,10 @@ namespace UserAPI.Services
         Task<List<User>> GetAllUsers();
         Task CreateUser(UserDTO user);
         
-        Task<User> GetUser(int id);
-        Task DeleteUser(int id);
+        Task<User> GetUser(Guid id);
+        Task DeleteUser(Guid id);
 
-        //Login task в интерфейса, добавен от Георги Станков.
-        Task<string> LoginAsync(UserDTO request)
+        Task<bool> LoginAsync(LoginUserDTO request);
 
     }
 }
