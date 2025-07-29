@@ -7,6 +7,8 @@ namespace UserAPI.Models
         [Key]
         public Guid Id { get; set; }
 
+        //Да добавим username? -Георги Станков
+
         [Required]
         public string FirstName { get; set; }
 

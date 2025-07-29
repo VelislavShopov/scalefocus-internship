@@ -1,6 +1,8 @@
 ﻿using UserAPI.Models;
 using UserAPI.Repositories;
 using UserAPI.DTOs;
+using UserAPI.Utils;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace UserAPI.Services
 {
@@ -21,7 +23,7 @@ namespace UserAPI.Services
         public async Task CreateUser(UserDTO user)
         {
             // creation logic here
-            
+
         }
 
         public async Task DeleteUser(int id)
@@ -33,5 +35,34 @@ namespace UserAPI.Services
         {
             return await _userRepository.GetUser(id);
         }
+
+        //Login метод, добавен от Георги Станков
+        //Добавил съм using userAPI.Utils;
+
+        public async Task<string> LoginAsync(UserDTO request)
+        {
+
+            if (User = null)
+            {
+
+                return null;
+
+            }
+
+            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
+               == PasswordVerificationResult.Failed)
+            {
+
+                //Има автоматични методи за хеширане във framework-а, може да ги погледнем.
+
+                //Не съм много сигурен, че използва файла в папката util.
+                return null;
+
+            }
+
+            return request;
+
+        }
     }
+
 }

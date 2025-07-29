@@ -64,5 +64,26 @@ namespace UserAPI.Controllers
            
         }
         
+        //Task в контролера за имплементиране на login service.
+        //Оставих още коментари във файловете User и UserDTO в DTOs и Models.
+        //Засега не съм имплементирал токени.
+        //Не мога да тествам, тъй като няма логика за създаване.
+
+        [HttpPost("login")]
+        public async Task<ActionResult<string>> Login(UserDTO request)
+        {
+            var result = await authService.LoginAsync(request);
+            if (result is null)
+            {
+
+                return BadRequest("Invalid password.");
+
+            }
+
+
+            return Ok(result);
+
+        }
+
     }
 }
