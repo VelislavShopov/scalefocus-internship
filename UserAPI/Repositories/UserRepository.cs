@@ -18,23 +18,29 @@ namespace UserAPI.Repositories
             await SaveChangesAsync();
         }
 
-        public async Task DeleteUser(int id)
+        public async Task DeleteUser(Guid id)
         {
             var user = await Users.FindAsync(id);
             Users.Remove(user);
             await SaveChangesAsync();
-            
+
         }
 
-        public async Task<User> GetUser(int id)
+        public async Task<User> GetUser(Guid id)
         {
             var user = await Users.FindAsync(id);
 
-            if (user == null) 
+            if (user == null)
             {
                 throw new Exception();
             }
 
+            return user;
+        }
+
+        public async Task<User> GetUserByUsername(string username)
+        {
+            var user = await Users.FindAsync(username);
             return user;
         }
     }

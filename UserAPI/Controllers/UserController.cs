@@ -5,7 +5,6 @@ using System.ComponentModel;
 using UserAPI.DTOs;
 using UserAPI.Services;
 using UserAPI.Models;
-using UserAPI.Utils;
 
 namespace UserAPI.Controllers
 {
@@ -28,41 +27,62 @@ namespace UserAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateUser([FromBody] UserDTO userDTO)
+
+
+        public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
-            PasswordHasher.CreatePasswordHash(userDTO.Password, out var hash, out var salt);
+            await _userService.CreateUser(userDTO);
             return Created();
         }
 
         [HttpGet]
         [Route("{id}")]
-        public async Task<ActionResult> GetUser(int id)
+        public async Task<ActionResult> GetUser(Guid id)
         {
             try
             {
                 return Ok(await _userService.GetUser(id));
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 return NotFound();
             }
-            
+
         }
 
         [HttpDelete]
         [Route("{id}")]
-        public async Task<ActionResult> DeleteUser(int id)
+        public async Task<ActionResult> DeleteUser(Guid id)
         {
             try
             {
                 await _userService.DeleteUser(id);
                 return NoContent();
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 return NotFound();
             }
-           
+
         }
-        
+
+
+        [HttpPost("login")]
+        public async Task<ActionResult<bool>> Login(LoginUserDTO request)
+        {
+            var result = await _userService.LoginAsync(request);
+            if (!result)
+            {
+
+                return BadRequest("Invalid password.");
+
+            }
+
+            // result trqbwa da stane tokena
+
+            return Ok(result);
+
+        }
+
     }
 }
