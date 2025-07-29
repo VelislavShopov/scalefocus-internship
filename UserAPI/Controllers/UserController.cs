@@ -31,8 +31,6 @@ namespace UserAPI.Controllers
         public async Task<ActionResult> CreateUser([FromBody] UserDTO userDTO)
         {
             PasswordHasher.CreatePasswordHash(userDTO.Password, out var hash, out var salt);
-            Console.WriteLine(PasswordHasher.VerifyPasswordHash(userDTO.Password,hash,salt));
-            // creation logic here
             return Created();
         }
 
