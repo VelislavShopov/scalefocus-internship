@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,11 @@ namespace UserAPI.Repositories
         public async Task CreateUser(User user)
         {
             await Users.AddAsync(user);
+            await Roles.AddAsync(new Role()
+            {
+                Name = "user",
+                UserId = user.Id,
+            });
             await SaveChangesAsync();
         }
 
@@ -54,7 +60,7 @@ namespace UserAPI.Repositories
 
         public async Task<User> GetUserByUsername(string username)
         {
-            var user = await Users.FindAsync(username);
+            var user = await Users.FirstOrDefaultAsync(u => u.Username == username);
             return user;
         }
 
@@ -62,24 +68,27 @@ namespace UserAPI.Repositories
 
         public async Task<TokenResponseDTO> CreatetokenResponse(User user)
         {
-            return new TokenResponseDTO { AccessToken = CreateToken(user), RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
+            return new TokenResponseDTO { AccessToken = CreateToken(user).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
         }
 
-        private string CreateToken(User user)
+        private async Task<string> CreateToken(User user)
         {
+
+            var role = await Roles.FirstOrDefaultAsync(r => r.UserId == user.Id);
+            
 
             var claims = new List<Claim>
             {
 
                 new Claim(ClaimTypes.Name,user.Username),
                 new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
-                new Claim(ClaimTypes.Role,user.Role)
-
+                new Claim(ClaimTypes.Role,role?.Name ?? "user")
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!));
 
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+            var key = new SymmetricSecurityKey(Convert.FromBase64String(_configuration.GetValue<string>("AppSettings:Token")));
+
+            var creds = new SigningCredentials(key,SecurityAlgorithms.HmacSha256);
 
             var tokenDescriptor = new JwtSecurityToken(
 

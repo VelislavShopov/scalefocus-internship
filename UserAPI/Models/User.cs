@@ -30,7 +30,7 @@ namespace UserAPI.Models
 
         [Required]
 
-        public string Role {  get; set; }=string.Empty;
+        public Role? Role {  get; set; }
 
         //Добавих refresh token
         public string? RefreshToken { get; set; }

@@ -68,6 +68,8 @@ namespace UserAPI.Controllers
         }
         //Редактиран е Login методът с токените.
         //Логиката с refresh токените е готова, както и генерирането на токена.
+        [HttpPost]
+        [Route("login")]
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginUserDTO request)
         {
             var result = await _userService.LoginAsync(request);
@@ -83,8 +85,10 @@ namespace UserAPI.Controllers
 
         }
 
-        [Authorize]
+        
         [HttpGet]
+        [Authorize]
+        [Route("auth-test")]
         public IActionResult AuthenticatedOnlyEndPoint()
         {
 
@@ -92,7 +96,7 @@ namespace UserAPI.Controllers
 
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         [HttpGet("admin-only")]
         public IActionResult AAdminOnlyEndPoint()
         {
