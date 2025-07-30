@@ -27,6 +27,7 @@ namespace UserAPI.Controllers
         }
 
         [HttpPost]
+
         public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
             await _userService.CreateUser(userDTO);
@@ -41,11 +42,11 @@ namespace UserAPI.Controllers
             {
                 return Ok(await _userService.GetUser(id));
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 return NotFound();
             }
-            
+
         }
 
         [HttpDelete]
@@ -57,12 +58,12 @@ namespace UserAPI.Controllers
                 await _userService.DeleteUser(id);
                 return NoContent();
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 return NotFound();
             }
-           
+
         }
-        
 
         [HttpPost("login")]
         public async Task<ActionResult<bool>> Login(LoginUserDTO request)

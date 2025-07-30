@@ -23,14 +23,14 @@ namespace UserAPI.Repositories
             var user = await Users.FindAsync(id);
             Users.Remove(user);
             await SaveChangesAsync();
-            
+
         }
 
         public async Task<User> GetUser(Guid id)
         {
             var user = await Users.FindAsync(id);
 
-            if (user == null) 
+            if (user == null)
             {
                 throw new Exception();
             }

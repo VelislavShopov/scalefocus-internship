@@ -7,8 +7,8 @@ namespace UserAPI.Services
     public interface IUserService
     {
         Task<List<User>> GetAllUsers();
-        Task CreateUser(CreateUserDTO user);
-        
+        Task<User> CreateUser(CreateUserDTO user);
+
         Task<User> GetUser(Guid id);
         Task DeleteUser(Guid id);
 
