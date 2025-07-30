@@ -2,24 +2,27 @@
 {
     public class CreateUserDTO
     {
-        public string Username { get; set; }
 
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        //Добавен е string.empty на всеки параметър с цел защита от грешки при изпълнение.-Георги Станков
+        //Има нужда от обновяване на базата данни.
+        public string Username { get; set; }=string.Empty;
 
-        public string Email { get; set; }
-        public string Password { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
 
         // Втора парола за потвърждение
 
-        public string ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 
     public class LoginUserDTO
     {
         // може да използваме така
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
 
     }
 

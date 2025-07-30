@@ -1,4 +1,5 @@
-﻿using UserAPI.Models;
+﻿using UserAPI.DTOs;
+using UserAPI.Models;
 
 namespace UserAPI.Repositories
 {
@@ -12,5 +13,10 @@ namespace UserAPI.Repositories
         Task<User> GetUser(Guid id);
 
         Task<User> GetUserByUsername(string username);
+
+        Task<TokenResponseDTO> CreatetokenResponse(User user);
+
+        Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO user);
+
     }
 }

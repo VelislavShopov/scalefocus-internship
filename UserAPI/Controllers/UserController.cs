@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
 using UserAPI.DTOs;
-using UserAPI.Services;
 using UserAPI.Models;
+using UserAPI.Services;
+
 
 namespace UserAPI.Controllers
 {
@@ -64,19 +66,53 @@ namespace UserAPI.Controllers
             }
 
         }
-
-        [HttpPost("login")]
-        public async Task<ActionResult<bool>> Login(LoginUserDTO request)
+        //Редактиран е Login методът с токените.
+        //Логиката с refresh токените е готова, както и генерирането на токена.
+        public async Task<ActionResult<TokenResponseDTO>> Login(LoginUserDTO request)
         {
             var result = await _userService.LoginAsync(request);
-            if (!result)
+            if (result is null)
             {
 
-                return BadRequest("Invalid password.");
+                return BadRequest("Invalid username or password.");
 
             }
 
-            // result trqbwa da stane tokena
+
+            return Ok(result);
+
+        }
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult AuthenticatedOnlyEndPoint()
+        {
+
+            return Ok("you are authenticated");
+
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin-only")]
+        public IActionResult AAdminOnlyEndPoint()
+        {
+
+            return Ok("you are an admin");
+
+        }
+
+        [HttpPost("refresh-token")]
+
+        public async Task<ActionResult<TokenResponseDTO>> RefreshToken(RefreshTokenRequestDTO request)
+        {
+
+            var result = await _userService.RefreshTokenAsync(request);
+            if (result is null || result.AccessToken is null || result.RefreshToken is null)
+            {
+
+                return Unauthorized("Invalid refresh token");
+
+            }
 
             return Ok(result);
 
