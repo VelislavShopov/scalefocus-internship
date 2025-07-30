@@ -18,7 +18,7 @@ namespace UserAPI.Repositories
             await SaveChangesAsync();
         }
 
-        public async Task DeleteUser(int id)
+        public async Task DeleteUser(Guid id)
         {
             var user = await Users.FindAsync(id);
             Users.Remove(user);
@@ -26,7 +26,7 @@ namespace UserAPI.Repositories
             
         }
 
-        public async Task<User> GetUser(int id)
+        public async Task<User> GetUser(Guid id)
         {
             var user = await Users.FindAsync(id);
 
@@ -35,6 +35,12 @@ namespace UserAPI.Repositories
                 throw new Exception();
             }
 
+            return user;
+        }
+
+        public async Task<User> GetUserByUsername(string username)
+        {
+            var user = await Users.FindAsync(username);
             return user;
         }
     }

@@ -7,6 +7,11 @@ namespace UserAPI.Models
         [Key]
         public Guid Id { get; set; }
 
+        //Да добавим username? -Георги Станков
+
+        [Required]
+        public string Username { get; set; }
+
         [Required]
         public string FirstName { get; set; }
 
@@ -16,8 +21,6 @@ namespace UserAPI.Models
         [Required]
         public string Email { get; set; }
 
-
-        public byte[] PasswordHash { get; set; } // hash + salt
-        public byte[] PasswordSalt { get; set; }
+        public string PasswordHash { get; set; }
     }
 }

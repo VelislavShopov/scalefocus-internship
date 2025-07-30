@@ -5,7 +5,6 @@ using System.ComponentModel;
 using UserAPI.DTOs;
 using UserAPI.Services;
 using UserAPI.Models;
-using UserAPI.Utils;
 
 namespace UserAPI.Controllers
 {
@@ -28,15 +27,15 @@ namespace UserAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateUser([FromBody] UserDTO userDTO)
+        public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
-            PasswordHasher.CreatePasswordHash(userDTO.Password, out var hash, out var salt);
+            await _userService.CreateUser(userDTO);
             return Created();
         }
 
         [HttpGet]
         [Route("{id}")]
-        public async Task<ActionResult> GetUser(int id)
+        public async Task<ActionResult> GetUser(Guid id)
         {
             try
             {
@@ -51,7 +50,7 @@ namespace UserAPI.Controllers
 
         [HttpDelete]
         [Route("{id}")]
-        public async Task<ActionResult> DeleteUser(int id)
+        public async Task<ActionResult> DeleteUser(Guid id)
         {
             try
             {
@@ -64,5 +63,23 @@ namespace UserAPI.Controllers
            
         }
         
+
+        [HttpPost("login")]
+        public async Task<ActionResult<bool>> Login(LoginUserDTO request)
+        {
+            var result = await _userService.LoginAsync(request);
+            if (!result)
+            {
+
+                return BadRequest("Invalid password.");
+
+            }
+
+            // result trqbwa da stane tokena
+
+            return Ok(result);
+
+        }
+
     }
 }

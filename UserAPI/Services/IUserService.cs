@@ -1,4 +1,5 @@
-﻿using UserAPI.Models;
+﻿
+using UserAPI.Models;
 using UserAPI.DTOs;
 
 namespace UserAPI.Services
@@ -6,9 +7,12 @@ namespace UserAPI.Services
     public interface IUserService
     {
         Task<List<User>> GetAllUsers();
-        Task CreateUser(UserDTO user);
+        Task CreateUser(CreateUserDTO user);
+        
+        Task<User> GetUser(Guid id);
+        Task DeleteUser(Guid id);
 
-        Task<User> GetUser(int id);
-        Task DeleteUser(int id);
+        Task<bool> LoginAsync(LoginUserDTO request);
+
     }
 }
