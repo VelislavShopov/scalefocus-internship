@@ -19,7 +19,7 @@ namespace UserAPI.Services
         {
             return await _userRepository.GetAllUsers();
         }
-
+        
         // Create метод направен от Никола Гочев
         public async Task<User> CreateUser(CreateUserDTO user)
 
@@ -55,6 +55,7 @@ namespace UserAPI.Services
 
         }
 
+
         public async Task<User?> GetUser(Guid id)
         {
             return await _userRepository.GetUser(id);
@@ -89,4 +90,5 @@ namespace UserAPI.Services
 
 
     }
+
 }

@@ -28,7 +28,6 @@ namespace UserAPI.Controllers
 
         [HttpPost]
 
-
         public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
             await _userService.CreateUser(userDTO);
@@ -65,7 +64,6 @@ namespace UserAPI.Controllers
             }
 
         }
-
 
         [HttpPost("login")]
         public async Task<ActionResult<bool>> Login(LoginUserDTO request)
