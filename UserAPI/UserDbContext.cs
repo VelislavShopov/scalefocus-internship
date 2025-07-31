@@ -12,10 +12,17 @@ namespace UserAPI
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // many to many for userroles
             modelBuilder.Entity<User>()
-               .HasOne(u => u.Role)
-               .WithOne(r => r.User)
-               .HasForeignKey<Role>(r => r.UserId);
+               .HasMany(e => e.Roles)
+               .WithMany(e => e.Users);
+
+            //seed for the roles
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, Name = "admin" },
+                new Role { Id = 2, Name = "user" }
+                );
         }
+
     }
 }

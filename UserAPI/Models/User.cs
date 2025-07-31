@@ -26,11 +26,7 @@ namespace UserAPI.Models
         public string PasswordHash { get; set; }= string.Empty;
 
 
-        //Добавих роли, за да работят токените.-Георги Станков
-
-        [Required]
-
-        public Role? Role {  get; set; }
+        public List<Role> Roles { get; } = [];
 
         //Добавих refresh token
         public string? RefreshToken { get; set; }
