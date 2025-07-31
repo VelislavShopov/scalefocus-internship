@@ -98,7 +98,7 @@ namespace UserAPI.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpGet("admin-only")]
-        public IActionResult AAdminOnlyEndPoint()
+        public IActionResult AdminOnlyEndPoint()
         {
 
             return Ok("you are an admin");
