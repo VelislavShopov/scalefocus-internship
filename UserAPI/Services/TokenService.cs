@@ -68,11 +68,11 @@ namespace UserAPI.Services
         public async Task<string> CreateToken(User user)
         {
             // loading the roles and if there is an admin role it is what is send in the token, can be changed later!
-            _userRepository.GetRolesForUser(user);
+            var roles = await _userRepository.GetRolesForUser(user);
 
             var role = "user";
 
-            if (user.Roles.Any(x => x.Name == "admin"))
+            if (roles.Any(x => x.RoleId == 2))
             {
                 role = "admin";
             }

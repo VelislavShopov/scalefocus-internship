@@ -12,8 +12,8 @@ using UserAPI;
 namespace UserAPI.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250731124817_add_refreshtoken")]
-    partial class add_refreshtoken
+    [Migration("20250731140717_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,21 +24,6 @@ namespace UserAPI.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("RoleUser", b =>
-                {
-                    b.Property<int>("RolesId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("UsersId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("RolesId", "UsersId");
-
-                    b.HasIndex("UsersId");
-
-                    b.ToTable("RoleUser");
-                });
 
             modelBuilder.Entity("UserAPI.Models.RefreshToken", b =>
                 {
@@ -81,18 +66,6 @@ namespace UserAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Roles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "user"
-                        });
                 });
 
             modelBuilder.Entity("UserAPI.Models.User", b =>
@@ -126,19 +99,19 @@ namespace UserAPI.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("RoleUser", b =>
+            modelBuilder.Entity("UserAPI.Models.UserRole", b =>
                 {
-                    b.HasOne("UserAPI.Models.Role", null)
-                        .WithMany()
-                        .HasForeignKey("RolesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
 
-                    b.HasOne("UserAPI.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("RoleId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("UserAPI.Models.RefreshToken", b =>
@@ -150,6 +123,21 @@ namespace UserAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("UserAPI.Models.UserRole", b =>
+                {
+                    b.HasOne("UserAPI.Models.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("UserAPI.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("UserAPI.Models.User", b =>

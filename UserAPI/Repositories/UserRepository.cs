@@ -30,8 +30,12 @@ namespace UserAPI.Repositories
         public async Task CreateUser(User user)
         {
             await Users.AddAsync(user);
-            var userRole = await Roles.FirstAsync(x => x.Name == "user");
-            userRole.Users.Add(user);
+            var role = await Roles.FirstAsync(x => x.Name == "user");
+            UserRoles.Add(new UserRole()
+            {
+                UserId = user.Id,
+                RoleId = role.Id
+            });
             await SaveChangesAsync();
         }
 
@@ -61,9 +65,10 @@ namespace UserAPI.Repositories
             return user;
         }
 
-        public async void GetRolesForUser(User user)
+        public async Task<List<UserRole>> GetRolesForUser(User user)
         {
-            
+            var userRoles = await UserRoles.Where(x => x.UserId == user.Id).ToListAsync();
+            return userRoles;
         }
 
     }
