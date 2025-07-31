@@ -95,7 +95,8 @@ namespace UserAPI.Repositories
                 issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
                 audience: _configuration.GetValue<string>("AppSettings:Audience"),
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
+                //Сменено е времето за изтичане на токена.- Георги Станков
+                expires: DateTime.UtcNow.AddMinutes(8),
                 signingCredentials: creds
 
             );
@@ -124,7 +125,9 @@ namespace UserAPI.Repositories
 
             user.RefreshToken = refreshToken;
 
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            //Сменено е времето за изтичане на токена.-Георги Станков
+
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(10);
 
             await SaveChangesAsync();
 
