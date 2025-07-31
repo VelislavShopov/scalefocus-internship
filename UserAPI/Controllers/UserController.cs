@@ -1,24 +1,33 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
 using UserAPI.DTOs;
 using UserAPI.Models;
+using UserAPI.Repositories;
 using UserAPI.Services;
 
 
 namespace UserAPI.Controllers
+
 {
+
+
     [ApiController]
     [Route("[controller]s")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IUserRepository _userRepository;
+        private readonly UserDbContext _context;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IUserRepository userRepository, UserDbContext context)
         {
             _userService = userService;
+            _userRepository = userRepository;
+            _context = context;
         }
 
 
@@ -85,7 +94,7 @@ namespace UserAPI.Controllers
 
         }
 
-        
+
         [HttpGet]
         [Authorize]
         [Route("auth-test")]
@@ -122,5 +131,39 @@ namespace UserAPI.Controllers
 
         }
 
+        [HttpPut("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDTO dto)
+        {
+            try
+            {
+                await _userService.ResetPassword(dto.Username, dto.NewPassword);
+                return Ok("Password reset successfully.");
+
+            }
+            catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpPut("change-username")]
+
+        public async Task<IActionResult> ChangeUsername(ChangeUsernameDTO request)
+        {
+            var result = await _userService.ChangeUsername(
+                request.OldUsername,
+                request.NewUsername,
+                request.Email,
+                request.Password
+            );
+
+            // You can decide whether to return 200 or 400 based on the result
+            if (result == "Username successfully changed.")
+                return Ok(new { message = result });
+
+            return BadRequest(new { message = result });
+        }
+
+
+
     }
 }
+

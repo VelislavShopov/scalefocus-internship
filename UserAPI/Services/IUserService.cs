@@ -1,5 +1,7 @@
 ﻿
 using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 using UserAPI.DTOs;
 using UserAPI.Models;
 
@@ -16,6 +18,10 @@ namespace UserAPI.Services
         Task<TokenResponseDTO> LoginAsync(LoginUserDTO request);
 
         Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request);
+
+        Task ResetPassword(string username, string newPassword);
+        Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password);
+
 
     }
 }

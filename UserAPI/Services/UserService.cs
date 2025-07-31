@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,10 +19,13 @@ namespace UserAPI.Services
 
         private readonly IConfiguration _configuration;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration)
+        private readonly UserDbContext _context;
+
+        public UserService(IUserRepository userRepository, IConfiguration configuration, UserDbContext context)
         {
             _userRepository = userRepository;
             _configuration = configuration;
+            _context = context;
         }
 
 
@@ -30,7 +34,7 @@ namespace UserAPI.Services
         {
             return await _userRepository.GetAllUsers();
         }
-        
+
         // Create метод направен от Никола Гочев
         public async Task<User> CreateUser(CreateUserDTO user)
 
@@ -85,7 +89,7 @@ namespace UserAPI.Services
                 return null;
             }
 
-            
+
 
             if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
                 == PasswordVerificationResult.Failed)
@@ -96,13 +100,58 @@ namespace UserAPI.Services
             return await _userRepository.CreatetokenResponse(user);
         }
 
-       public async Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request)
-       {
+        public async Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request)
+        {
 
             return await _userRepository.RefreshTokenAsync(request);
 
-       }
+        }
 
+        // възобновяване на парола
+        public async Task ResetPassword(string username, string newPassword)
+        {
+            var user = await _userRepository.GetUserByUsername(username);
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+
+            var hashedPassword = new PasswordHasher<User>().HashPassword(user, newPassword);
+            user.PasswordHash = hashedPassword;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password)
+        {
+            var user = await _userRepository.GetUserByUsername(oldUsername);
+            if (user == null) return "User with the old username not found.";
+
+            if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
+                return "Email does not match our records.";
+
+            var passwordVerificationResult = new PasswordHasher<User>()
+                .VerifyHashedPassword(user, user.PasswordHash, password);
+            if (passwordVerificationResult == PasswordVerificationResult.Failed)
+                return "Incorrect password.";
+
+            var existingUser = await _userRepository.GetUserByUsername(newUsername);
+            if (existingUser != null)
+                return "New username is already taken.";
+
+            user.Username = newUsername;
+            _context.Users.Update(user);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                return "An error occurred while saving changes.";
+            }
+
+            return "Username successfully changed.";
+        }
     }
-
 }
+
+
