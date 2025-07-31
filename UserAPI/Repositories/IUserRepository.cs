@@ -14,9 +14,7 @@ namespace UserAPI.Repositories
 
         Task<User> GetUserByUsername(string username);
 
-        Task<TokenResponseDTO> CreatetokenResponse(User user);
-
-        Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO user);
+        void GetRolesForUser(User user);
 
     }
 }

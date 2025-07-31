@@ -84,6 +84,9 @@ namespace UserAPI
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUserRepository, UserRepository>();
+
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<ITokenRepository, TokenRepository>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

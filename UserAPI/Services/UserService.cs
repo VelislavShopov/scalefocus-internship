@@ -72,11 +72,7 @@ namespace UserAPI.Services
             return await _userRepository.GetUser(id);
         }
 
-        //Login метод, добавен от Георги Станков
-        //Добавил съм using userAPI.Utils;
-
-
-        public async Task<TokenResponseDTO> LoginAsync(LoginUserDTO request)
+        public async Task<User> LoginAsync(LoginUserDTO request)
         {
             var user = await _userRepository.GetUserByUsername(request.Username);
 
@@ -85,7 +81,7 @@ namespace UserAPI.Services
                 return null;
             }
 
-            
+
 
             if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
                 == PasswordVerificationResult.Failed)
@@ -93,15 +89,11 @@ namespace UserAPI.Services
                 return null;
             }
 
-            return await _userRepository.CreatetokenResponse(user);
+            return user;
         }
+        //Login метод, добавен от Георги Станков
+        //Добавил съм using userAPI.Utils;
 
-       public async Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request)
-       {
-
-            return await _userRepository.RefreshTokenAsync(request);
-
-       }
 
     }
 

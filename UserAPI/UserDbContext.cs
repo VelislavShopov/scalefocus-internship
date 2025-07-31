@@ -10,6 +10,8 @@ namespace UserAPI
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // many to many for userroles
@@ -22,6 +24,12 @@ namespace UserAPI
                 new Role { Id = 1, Name = "admin" },
                 new Role { Id = 2, Name = "user" }
                 );
+
+            modelBuilder.Entity<User>()
+                .HasOne(e => e.RefreshToken)
+                .WithOne(e => e.User)
+                .HasForeignKey<RefreshToken>(e => e.UserId);
+
         }
 
     }

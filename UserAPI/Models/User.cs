@@ -28,11 +28,8 @@ namespace UserAPI.Models
 
         public List<Role> Roles { get; } = [];
 
-        //Добавих refresh token
-        public string? RefreshToken { get; set; }
-
-        public DateTime RefreshTokenExpiryTime { get; set; }
-
+        public RefreshToken? RefreshToken { get; set; }
+        
 
     }
 }

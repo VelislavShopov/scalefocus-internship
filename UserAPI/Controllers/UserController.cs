@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
 using UserAPI.DTOs;
@@ -15,10 +16,12 @@ namespace UserAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly ITokenService _tokenService;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService,ITokenService tokenService)
         {
             _userService = userService;
+            _tokenService = tokenService;
         }
 
 
@@ -72,16 +75,19 @@ namespace UserAPI.Controllers
         [Route("login")]
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginUserDTO request)
         {
-            var result = await _userService.LoginAsync(request);
-            if (result is null)
+            var user = await _userService.LoginAsync(request);
+
+            if (user == null)
             {
 
                 return BadRequest("Invalid username or password.");
 
             }
 
+            var response = await _tokenService.CreatetokenResponse(user);
 
-            return Ok(result);
+
+            return Ok(response);
 
         }
 
@@ -109,16 +115,16 @@ namespace UserAPI.Controllers
 
         public async Task<ActionResult<TokenResponseDTO>> RefreshToken(RefreshTokenRequestDTO request)
         {
-
-            var result = await _userService.RefreshTokenAsync(request);
-            if (result is null || result.AccessToken is null || result.RefreshToken is null)
+            try
             {
-
-                return Unauthorized("Invalid refresh token");
-
+                var result = await _tokenService.GetTokenResponse(request);
+                return Ok(result);
             }
-
-            return Ok(result);
+            catch (Exception ex) 
+            {
+                return BadRequest("Invalid refresh token");
+            }
+            
 
         }
 

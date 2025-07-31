@@ -13,9 +13,7 @@ namespace UserAPI.Services
         Task<User> GetUser(Guid id);
         Task DeleteUser(Guid id);
 
-        Task<TokenResponseDTO> LoginAsync(LoginUserDTO request);
-
-        Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request);
+        Task<User> LoginAsync(LoginUserDTO request);
 
     }
 }
