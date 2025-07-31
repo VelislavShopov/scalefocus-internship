@@ -1,6 +1,7 @@
 ﻿
-using UserAPI.Models;
+using Azure.Core;
 using UserAPI.DTOs;
+using UserAPI.Models;
 
 namespace UserAPI.Services
 {
@@ -12,7 +13,9 @@ namespace UserAPI.Services
         Task<User> GetUser(Guid id);
         Task DeleteUser(Guid id);
 
-        Task<bool> LoginAsync(LoginUserDTO request);
+        Task<TokenResponseDTO> LoginAsync(LoginUserDTO request);
+
+        Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request);
 
     }
 }

@@ -22,6 +22,20 @@ namespace UserAPI.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("UserAPI.Models.Role", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("UserAPI.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -44,6 +58,12 @@ namespace UserAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -51,6 +71,23 @@ namespace UserAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("UserAPI.Models.Role", b =>
+                {
+                    b.HasOne("UserAPI.Models.User", "User")
+                        .WithOne("Role")
+                        .HasForeignKey("UserAPI.Models.Role", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("UserAPI.Models.User", b =>
+                {
+                    b.Navigation("Role")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

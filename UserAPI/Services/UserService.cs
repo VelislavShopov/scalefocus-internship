@@ -1,8 +1,14 @@
-﻿using UserAPI.Models;
-using UserAPI.Repositories;
-using UserAPI.DTOs;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using UserAPI.DTOs;
+using UserAPI.Models;
+using UserAPI.Repositories;
 
 namespace UserAPI.Services
 {
@@ -10,10 +16,15 @@ namespace UserAPI.Services
     {
         private readonly IUserRepository _userRepository;
 
-        public UserService(IUserRepository userRepository)
+        private readonly IConfiguration _configuration;
+
+        public UserService(IUserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
+            _configuration = configuration;
         }
+
+
 
         public async Task<List<User>> GetAllUsers()
         {
@@ -65,29 +76,32 @@ namespace UserAPI.Services
         //Добавил съм using userAPI.Utils;
 
 
-        public async Task<bool> LoginAsync(LoginUserDTO request)
+        public async Task<TokenResponseDTO> LoginAsync(LoginUserDTO request)
         {
             var user = await _userRepository.GetUserByUsername(request.Username);
 
             if (user == null)
             {
-                return false;
+                return null;
             }
 
-            var result = new PasswordHasher<User>().VerifyHashedPassword(
-                user,
-                user.PasswordHash,
-                request.Password
-            );
+            
 
-            if (result == PasswordVerificationResult.Success)
+            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
+                == PasswordVerificationResult.Failed)
             {
-                return true;
+                return null;
             }
 
-            return false;
+            return await _userRepository.CreatetokenResponse(user);
         }
 
+       public async Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request)
+       {
+
+            return await _userRepository.RefreshTokenAsync(request);
+
+       }
 
     }
 
