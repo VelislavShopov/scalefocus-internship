@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using EmailService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,18 +23,22 @@ namespace UserAPI.Controllers
         private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
         private readonly UserDbContext _context;
+        private readonly IEmailSender _emailSender;
 
-        public UserController(IUserService userService, IUserRepository userRepository, UserDbContext context)
+        public UserController(IUserService userService, IUserRepository userRepository, UserDbContext context, IEmailSender emailSender)
         {
             _userService = userService;
             _userRepository = userRepository;
             _context = context;
+            _emailSender = emailSender;
         }
 
 
         [HttpGet]
         public async Task<ActionResult<List<User>>> GetUsersList()
         {
+            var message = new Message(new string[] { "test@mailinator.com" }, "Test Email", "This is the content of our email");
+            _emailSender.SendEmail(message);
             return await _userService.GetAllUsers();
         }
 
