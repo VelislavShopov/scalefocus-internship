@@ -7,14 +7,13 @@ namespace UserAPI.Models
 
         public class Role
         {
-            [Key, ForeignKey("User")]
-            public Guid UserId { get; set; }
+            [Key]
+            public int Id{ get; set; }
 
             [Required]
             public string Name { get; set; }
 
-            [JsonIgnore]
-            public User User { get; set; } = null!;
+            public List<User> Users{ get; } = [];
         }
     
 }

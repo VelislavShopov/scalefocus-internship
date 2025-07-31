@@ -30,11 +30,8 @@ namespace UserAPI.Repositories
         public async Task CreateUser(User user)
         {
             await Users.AddAsync(user);
-            await Roles.AddAsync(new Role()
-            {
-                Name = "user",
-                UserId = user.Id,
-            });
+            var userRole = await Roles.FirstAsync(x => x.Name == "user");
+            userRole.Users.Add(user);
             await SaveChangesAsync();
         }
 
@@ -73,8 +70,15 @@ namespace UserAPI.Repositories
 
         private async Task<string> CreateToken(User user)
         {
+            // loading the roles and if there is an admin role it is what is send in the token, can be changed later!
+            await Users.Entry(user).Collection(x => x.Roles).LoadAsync();
 
-            var role = await Roles.FirstOrDefaultAsync(r => r.UserId == user.Id);
+            var role = "user";
+
+            if (user.Roles.Any(x=> x.Name == "admin"))
+            {
+                role = "admin";
+            }
             
 
             var claims = new List<Claim>
@@ -82,7 +86,7 @@ namespace UserAPI.Repositories
 
                 new Claim(ClaimTypes.Name,user.Username),
                 new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
-                new Claim(ClaimTypes.Role,role?.Name ?? "user")
+                new Claim(ClaimTypes.Role,role)
             };
 
 
