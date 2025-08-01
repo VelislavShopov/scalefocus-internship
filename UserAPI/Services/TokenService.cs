@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -54,12 +55,12 @@ namespace UserAPI.Services
 
         private string GenerateRefreshtoken()
         {
-
             var randomNumber = new byte[32];
 
             using var rng = RandomNumberGenerator.Create();
 
             rng.GetBytes(randomNumber);
+
 
             return Convert.ToBase64String(randomNumber);
 
@@ -94,7 +95,7 @@ namespace UserAPI.Services
             var tokenDescriptor = new JwtSecurityToken(
 
                 issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
-                audience: _configuration.GetValue<string>("AppSettings:Audience"),
+                audience: "events_api",
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: creds
@@ -115,7 +116,6 @@ namespace UserAPI.Services
         private async Task<string> GenerateAndSaveRefreshtokenAsync(User user)
         {
 
-            // userId token -> delete
             var currentRefreshToken = await _tokenRepository.GetRefreshTokenByUserId(user.Id);
 
             if (currentRefreshToken != null)
@@ -126,7 +126,6 @@ namespace UserAPI.Services
 
             var refreshToken = GenerateRefreshtoken();
 
-            //Save in db
 
             var newRefreshToken = new RefreshToken()
             {

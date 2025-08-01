@@ -52,7 +52,7 @@ namespace UserAPI
 
             var secret = Configuration.GetValue<string>("AppSettings:Token");
             var issuer = Configuration.GetValue<string>("AppSettings:Issuer");
-            var audience = Configuration.GetValue<string>("AppSettings:Audience");
+            var audiences = Configuration.GetSection("AppSettings:Audience").Get<List<string>>();
             var key = Convert.FromBase64String(secret);
 
             services.AddAuthentication(x =>
@@ -73,7 +73,7 @@ namespace UserAPI
                     ValidIssuer = issuer,
 
                     ValidateAudience = true,
-                    ValidAudience = audience,
+                    ValidAudiences = audiences,
 
                     ValidateLifetime = true,
                 };
