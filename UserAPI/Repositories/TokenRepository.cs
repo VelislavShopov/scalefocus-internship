@@ -15,7 +15,8 @@ namespace UserAPI.Repositories
 
         public async Task<RefreshToken?> GetRefreshToken(RefreshTokenRequestDTO request)
         {
-            return await RefreshTokens.FirstOrDefaultAsync(x => x.Token == request.RefreshToken);
+            var refreshToken = await RefreshTokens.FirstOrDefaultAsync(x=>x.UserId == request.UserId);
+            return refreshToken;
 
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using BCrypt.Net;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -34,8 +35,15 @@ namespace UserAPI.Services
             {
                 throw new Exception();
             }
-            else if (refreshToken.RefreshTokenExpiryTime < DateTime.UtcNow)
+
+            if (!BCrypt.Net.BCrypt.Verify(request.RefreshToken, refreshToken.Token))
             {
+                throw new Exception();
+            }
+
+            if (refreshToken.RefreshTokenExpiryTime < DateTime.UtcNow)
+            {
+                _tokenRepository.DeleteRefreshToken(refreshToken);
                 throw new Exception();
             }
 
@@ -53,7 +61,7 @@ namespace UserAPI.Services
 
         }
 
-        private string GenerateRefreshtoken()
+        private (string token, string hashedToken) GenerateRefreshtoken()
         {
             var randomNumber = new byte[32];
 
@@ -62,8 +70,11 @@ namespace UserAPI.Services
             rng.GetBytes(randomNumber);
 
 
-            return Convert.ToBase64String(randomNumber);
+            var token = Convert.ToBase64String(randomNumber);
 
+            var hashedToken = BCrypt.Net.BCrypt.HashPassword(token);
+
+            return (token,hashedToken);
         }
 
         public async Task<string> CreateToken(User user)
@@ -130,13 +141,13 @@ namespace UserAPI.Services
             var newRefreshToken = new RefreshToken()
             {
                 UserId = user.Id,
-                Token = refreshToken,
+                Token = refreshToken.hashedToken,
                 RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
             };
 
             await _tokenRepository.AddRefreshToken(newRefreshToken);
 
-            return refreshToken;
+            return refreshToken.token;
 
         }
 
