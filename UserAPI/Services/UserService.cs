@@ -16,12 +16,10 @@ namespace UserAPI.Services
     {
         private readonly IUserRepository _userRepository;
 
-        private readonly IConfiguration _configuration;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration)
+        public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
-            _configuration = configuration;
         }
 
 
@@ -91,8 +89,6 @@ namespace UserAPI.Services
 
             return user;
         }
-        //Login метод, добавен от Георги Станков
-        //Добавил съм using userAPI.Utils;
 
 
     }
