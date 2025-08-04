@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using EmailService;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,11 +22,15 @@ namespace UserAPI.Services
 
         private readonly UserDbContext _context;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration, UserDbContext context)
+        private readonly IEmailSender _emailSender;
+
+        public UserService(IUserRepository userRepository, IConfiguration configuration, UserDbContext context, IEmailSender emailSender)
         {
             _userRepository = userRepository;
             _configuration = configuration;
             _context = context;
+            _emailSender = emailSender;
+
         }
 
 
@@ -39,6 +44,18 @@ namespace UserAPI.Services
         public async Task<User> CreateUser(CreateUserDTO user)
 
         {
+            var existingEmail = await _userRepository.GetUserByEmail(user.Email);
+            if (existingEmail != null)
+            {
+                throw new ArgumentException("A user with this email already exists.");
+            }
+
+            var existingUsername = await _userRepository.GetUserByUsername(user.Username);
+            if (existingUsername != null)
+            {
+                throw new ArgumentException("A user with this username already exists.");
+            }
+
 
             // проверяваме дали паролата и потвържедението на парола съвпадат
 
@@ -107,18 +124,7 @@ namespace UserAPI.Services
 
         }
 
-        // възобновяване на парола
-        public async Task ResetPassword(string username, string newPassword)
-        {
-            var user = await _userRepository.GetUserByUsername(username);
-            if (user == null)
-                throw new KeyNotFoundException("User not found.");
 
-            var hashedPassword = new PasswordHasher<User>().HashPassword(user, newPassword);
-            user.PasswordHash = hashedPassword;
-
-            await _context.SaveChangesAsync();
-        }
 
         public async Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password)
         {
@@ -150,6 +156,51 @@ namespace UserAPI.Services
             }
 
             return "Username successfully changed.";
+        }
+
+        public async Task<bool> ForgotPassword(string email, string baseUrl)
+        {
+            var user = await _userRepository.GetUserByEmail(email);
+            if (user == null)
+                return false;
+
+            var tokenBytes = RandomNumberGenerator.GetBytes(64);
+            var token = Convert.ToBase64String(tokenBytes);
+
+            user.PasswordResetToken = token;
+            user.PasswordResetTokenExpires = DateTime.UtcNow.AddMinutes(5);
+            await _userRepository.UpdateUser(user);
+
+            var callbackUrl = $"{baseUrl}?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
+
+            var message = new Message(
+                new[] { user.Email },
+                "Password Reset",
+                $"Please reset your password using this link: {callbackUrl}"
+            );
+            await _emailSender.SendEmailAsync(message);
+
+            return true;
+        }
+
+        public async Task<bool> ResetPassword(string token, string newPassword)
+        {
+            var decodedToken = Uri.UnescapeDataString(token);
+
+            var user = await _userRepository.GetUserByResetToken(decodedToken);
+            if (user == null)
+                return false;
+
+            var passwordHasher = new PasswordHasher<User>();
+            var hashedPassword = passwordHasher.HashPassword(user, newPassword);
+
+            user.PasswordHash = hashedPassword;
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpires = null;
+
+            await _userRepository.UpdateUser(user);
+
+            return true;
         }
     }
 }

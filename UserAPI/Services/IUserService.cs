@@ -19,8 +19,10 @@ namespace UserAPI.Services
 
         Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request);
 
-        Task ResetPassword(string username, string newPassword);
         Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password);
+
+        Task<bool> ForgotPassword(string email, string baseUrl);
+        Task<bool> ResetPassword(string token, string newPassword);
 
 
     }

@@ -160,77 +160,36 @@ namespace UserAPI.Controllers
             return BadRequest(new { message = result });
         }
 
-        // Забравена парола
-
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO request)
         {
             if (!ModelState.IsValid)
                 return BadRequest("Invalid request data.");
 
+            var baseUrl = "https://localhost:7264/reset-password";
 
-            var user = await _userRepository.GetUserByEmail(request.Email!);
-            if (user == null)
+            var result = await _userService.ForgotPassword(request.Email!, baseUrl);
+
+            if (!result)
                 return BadRequest("Invalid request.");
 
-            var tokenBytes = RandomNumberGenerator.GetBytes(64);
-            var token = Convert.ToBase64String(tokenBytes);
-
-
-            user.PasswordResetToken = token;
-            user.PasswordResetTokenExpires = DateTime.UtcNow.AddMinutes(5);
-            await _userRepository.UpdateUser(user);
-
-
-            var baseUrl = "https://localhost:7264/reset-password";
-            var callbackUrl = $"{baseUrl}?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
-
-
-
-            var message = new Message(
-                new[] { user.Email },
-                "Password Reset",
-                $"Please reset your password using this link: {callbackUrl}"
-            );
-            await _emailSender.SendEmailAsync(message);
-
             return Ok("Password reset instructions have been sent to your email.");
-
         }
 
-       
-        // Ресет на парола
-
         [HttpPost("reset-password")]
-
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetPassword)
         {
             if (!ModelState.IsValid)
                 return BadRequest("Invalid request data.");
 
-            var decodedToken = Uri.UnescapeDataString(resetPassword.Token);
+            var result = await _userService.ResetPassword(resetPassword.Token, resetPassword.newPassword);
 
-            var user = await _userRepository.GetUserByResetToken(decodedToken);
-            if (user == null)
+            if (!result)
                 return BadRequest("Invalid request.");
 
-            var passwordHasher = new PasswordHasher<User>();
-            var hashedPassword = passwordHasher.HashPassword(user, resetPassword.newPassword);
-
-
-            user.PasswordHash = hashedPassword;
-            user.PasswordResetToken = null;
-            user.PasswordResetTokenExpires = null;
-
-            await _userRepository.UpdateUser(user);
-
             return Ok("Password reset successfully.");
-
-
-
-
-
         }
+
     }
 }
 
