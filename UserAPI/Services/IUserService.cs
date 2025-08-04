@@ -11,7 +11,7 @@ namespace UserAPI.Services
         Task<User> CreateUser(CreateUserDTO user);
 
         Task<User> GetUser(Guid id);
-        Task DeleteUser(Guid id);
+        Task DeleteUser(Guid id, Guid loggedUserId);
 
         Task<User> LoginAsync(LoginUserDTO request);
 

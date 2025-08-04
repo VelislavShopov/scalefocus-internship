@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using UserAPI.DTOs;
+using UserAPI.Exceptions;
 using UserAPI.Models;
 using UserAPI.Repositories;
 
@@ -14,7 +15,6 @@ namespace UserAPI.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly ITokenRepository _tokenRepository;
-
         private readonly IConfiguration _configuration;
 
         public TokenService(IUserRepository userRepository,ITokenRepository tokenRepository, IConfiguration configuration)
@@ -33,18 +33,18 @@ namespace UserAPI.Services
 
             if (refreshToken == null)
             {
-                throw new Exception();
+                throw new TokenException("The user doesn't exist or doesn't have a refresh token.");
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(request.RefreshToken, refreshToken.Token))
+            if (!BCrypt.Net.BCrypt.Verify(request.RefreshToken, refreshToken.RefreshTokenValue))
             {
-                throw new Exception();
+                throw new TokenException("Invalid refresh token.");
             }
 
-            if (refreshToken.RefreshTokenExpiryTime < DateTime.UtcNow)
+            if (refreshToken.ExpiryTime < DateTime.UtcNow)
             {
                 _tokenRepository.DeleteRefreshToken(refreshToken);
-                throw new Exception();
+                throw new TokenException("The token has expired.");
             }
 
             var user = await _userRepository.GetUser(refreshToken.UserId);
@@ -69,7 +69,6 @@ namespace UserAPI.Services
 
             rng.GetBytes(randomNumber);
 
-
             var token = Convert.ToBase64String(randomNumber);
 
             var hashedToken = BCrypt.Net.BCrypt.HashPassword(token);
@@ -89,7 +88,6 @@ namespace UserAPI.Services
                 role = "admin";
             }
 
-
             var claims = new List<Claim>
             {
 
@@ -97,7 +95,6 @@ namespace UserAPI.Services
                 new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
                 new Claim(ClaimTypes.Role,role)
             };
-
 
             var key = new SymmetricSecurityKey(Convert.FromBase64String(_configuration.GetValue<string>("AppSettings:Token")));
 
@@ -114,15 +111,12 @@ namespace UserAPI.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
-
         }
 
         public async Task<TokenResponseDTO> CreatetokenResponse(User user)
         {
             return new TokenResponseDTO { AccessToken = CreateToken(user).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
         }
-
-
 
         private async Task<string> GenerateAndSaveRefreshtokenAsync(User user)
         {
@@ -134,15 +128,13 @@ namespace UserAPI.Services
                 await _tokenRepository.DeleteRefreshToken(currentRefreshToken);
             }
 
-
             var refreshToken = GenerateRefreshtoken();
-
 
             var newRefreshToken = new RefreshToken()
             {
                 UserId = user.Id,
-                Token = refreshToken.hashedToken,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
+                RefreshTokenValue = refreshToken.hashedToken,
+                ExpiryTime = DateTime.UtcNow.AddDays(7)
             };
 
             await _tokenRepository.AddRefreshToken(newRefreshToken);
@@ -150,6 +142,5 @@ namespace UserAPI.Services
             return refreshToken.token;
 
         }
-
     }
 }
