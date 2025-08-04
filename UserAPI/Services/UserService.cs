@@ -49,7 +49,7 @@ namespace UserAPI.Services
 
             var newUser = new User
             {
-                Id = Guid.NewGuid(),
+                UserId = Guid.NewGuid(),
                 Username = user.Username,
                 Email = user.Email,
                 FirstName = user.FirstName,

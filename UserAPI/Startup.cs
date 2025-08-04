@@ -22,11 +22,12 @@ namespace UserAPI
         public void ConfigureServices(IServiceCollection services)
 
         {
-           
+
             var emailConfig = Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
             services.AddSingleton(emailConfig);
             services.AddScoped<IEmailSender, EmailSender>();
             services.AddControllers();
+            services.AddControllersWithViews();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(c =>
             {
@@ -102,15 +103,20 @@ namespace UserAPI
                 app.UseDeveloperExceptionPage();
 
             }
-
+           
             app.UseRouting();
 
 
             app.UseAuthentication();
             app.UseAuthorization();
-            
 
-            app.UseEndpoints(endpoints => endpoints.MapControllers());
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+            });
 
         }
     }

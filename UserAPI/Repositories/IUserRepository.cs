@@ -14,9 +14,14 @@ namespace UserAPI.Repositories
 
         Task<User> GetUserByUsername(string username);
 
+        Task<User> GetUserByEmail(string email);
+
         Task<TokenResponseDTO> CreatetokenResponse(User user);
 
         Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO user);
+
+        Task<User?> GetUserByResetToken(string token);
+        Task UpdateUser(User user);
 
     }
 }

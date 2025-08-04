@@ -33,7 +33,7 @@ namespace UserAPI.Repositories
             await Roles.AddAsync(new Role()
             {
                 Name = "user",
-                UserId = user.Id,
+                UserId = user.UserId,
             });
             await SaveChangesAsync();
         }
@@ -64,6 +64,12 @@ namespace UserAPI.Repositories
             return user;
         }
 
+        public async Task<User> GetUserByEmail(string email)
+        {
+            var user = await Users.FirstOrDefaultAsync(u => u.Email == email);
+            return user;
+        }
+
         //Нови методи за генериране на token-и.
 
         public async Task<TokenResponseDTO> CreatetokenResponse(User user)
@@ -74,14 +80,14 @@ namespace UserAPI.Repositories
         private async Task<string> CreateToken(User user)
         {
 
-            var role = await Roles.FirstOrDefaultAsync(r => r.UserId == user.Id);
+            var role = await Roles.FirstOrDefaultAsync(r => r.UserId == user.UserId);
             
 
             var claims = new List<Claim>
             {
 
                 new Claim(ClaimTypes.Name,user.Username),
-                new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier,user.UserId.ToString()),
                 new Claim(ClaimTypes.Role,role?.Name ?? "user")
             };
 
@@ -162,6 +168,18 @@ namespace UserAPI.Repositories
 
 
 
+        }
+
+        public async Task<User?> GetUserByResetToken(string token)
+        {
+            return await Users
+                .FirstOrDefaultAsync(u => u.PasswordResetToken == token);
+        }
+
+        public async Task UpdateUser(User user)
+        {
+            Users.Update(user);
+            await SaveChangesAsync();
         }
 
     }
