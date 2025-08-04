@@ -124,8 +124,6 @@ namespace UserAPI.Services
 
         }
 
-
-
         public async Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password)
         {
             var user = await _userRepository.GetUserByUsername(oldUsername);
@@ -158,6 +156,7 @@ namespace UserAPI.Services
             return "Username successfully changed.";
         }
 
+        // Забравена парола
         public async Task<bool> ForgotPassword(string email, string baseUrl)
         {
             var user = await _userRepository.GetUserByEmail(email);
@@ -173,6 +172,8 @@ namespace UserAPI.Services
 
             var callbackUrl = $"{baseUrl}?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
 
+        
+
             var message = new Message(
                 new[] { user.Email },
                 "Password Reset",
@@ -183,6 +184,7 @@ namespace UserAPI.Services
             return true;
         }
 
+        // Ресет на парола
         public async Task<bool> ResetPassword(string token, string newPassword)
         {
             var decodedToken = Uri.UnescapeDataString(token);

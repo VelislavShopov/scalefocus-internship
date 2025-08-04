@@ -23,8 +23,7 @@ namespace UserAPI
 
         {
 
-            var emailConfig = Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
-            services.AddSingleton(emailConfig);
+            services.Configure<EmailConfiguration>(Configuration.GetSection("EmailConfiguration"));
             services.AddScoped<IEmailSender, EmailSender>();
             services.AddControllers();
             services.AddControllersWithViews();

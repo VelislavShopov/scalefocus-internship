@@ -9,17 +9,17 @@ namespace EmailService
 {
     public class Message
     {
-        public List<MailboxAddress> To { get; set; }
+        public List<string> To { get; set; }
         public string Subject { get; set; }
         public string Content { get; set; }
 
         public Message(IEnumerable<string> to, string subject, string content)
         {
-            To = new List<MailboxAddress>();
+            To = to.Where(email => !string.IsNullOrWhiteSpace(email)).ToList();
 
-            To.AddRange(to.Select(x => new MailboxAddress("", x)));
             Subject = subject;
             Content = content;
+
         }
     }
 }

@@ -1,95 +1,79 @@
-﻿using MimeKit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using MailKit.Net.Smtp;
-using System.Text;
+﻿using EmailService;
+using System.Net;
+using System.Net.Mail;
+using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
+using System.Linq;
 
-namespace EmailService
+public class EmailSender : IEmailSender
 {
-    public class EmailSender : IEmailSender
+    private readonly EmailConfiguration _config;
 
-        
+    public EmailSender(IOptions<EmailConfiguration> config)
     {
-        public readonly EmailConfiguration _emailConfig;
-        public EmailSender(EmailConfiguration emailConfig)
-        {
-           _emailConfig = emailConfig;
-        }
+     
 
-        public void SendEmail(Message message)
-        {
-            var emailMessage = CreateEmailMessage(message);
-            Send(emailMessage);
-        }
+        _config = config.Value;
 
-        public async Task SendEmailAsync(Message message)
-        {
-            var emailMessage = CreateEmailMessage(message);
-
-            await SendAsync(emailMessage);
-        }
-
-        private MimeMessage CreateEmailMessage(Message message)
-        {
-            var emailMessage = new MimeMessage();
-            emailMessage.From.Add(new MailboxAddress("", _emailConfig.From));
-            emailMessage.To.AddRange(message.To);
-            emailMessage.Subject = message.Subject;
-            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Text) { Text = message.Content};
-
-            return emailMessage;
-        }
-
-        private void Send(MimeMessage mailMessage)
-        {
-            using(var client = new SmtpClient())
-            {
-                try
-                {
-                    client.Connect(_emailConfig.SmtpServer, _emailConfig.Port, true);
-                    client.AuthenticationMechanisms.Remove("XOAUTH2");
-                    client.Authenticate(_emailConfig.Username, _emailConfig.Password);
-
-                    client.Send(mailMessage);
-
-                }
-
-                catch { throw; }
-
-                finally {
-
-                    client.Disconnect(true);
-                    client.Dispose();
-                }
-            }
-        }
-
-        private async Task SendAsync(MimeMessage mailMessage)
-        {
-            using (var client = new SmtpClient())
-            {
-                try
-                {
-                    await client.ConnectAsync(_emailConfig.SmtpServer, _emailConfig.Port, true);
-                    client.AuthenticationMechanisms.Remove("XOAUTH2");
-                    await client.AuthenticateAsync(_emailConfig.Username, _emailConfig.Password);
-
-                    await client.SendAsync(mailMessage);
-
-                }
-
-                catch { throw; }
-
-                finally
-                {
-
-                    await client.DisconnectAsync(true);
-                    client.Dispose();
-                }
-            }
-        }
+      
     }
+
+    public void SendEmail(Message message)
+    {
+        using var smtp = new SmtpClient
+        {
+            Host = _config.SmtpServer,
+            Port = _config.Port,
+            EnableSsl = true,
+            Credentials = new NetworkCredential(_config.Username, _config.Password)
+        };
+
+        var mail = new MailMessage
+        {
+            From = new MailAddress(_config.From),
+            Subject = message.Subject,
+            Body = message.Content,
+            IsBodyHtml = false
+        };
+
+        foreach (var toAddress in message.To)
+        {
+            mail.To.Add(new MailAddress(toAddress));
+        }
+
+        smtp.Send(mail);
+    }
+
+    public async Task SendEmailAsync(Message message)
+    {
+        var mailMessage = new MailMessage
+        {
+            From = new MailAddress(_config.From),
+            Subject = message.Subject,
+            Body = message.Content,
+            IsBodyHtml = true
+        };
+
+        if (message.To == null || !message.To.Any())
+            throw new InvalidOperationException("At least one recipient is required.");
+
+        foreach (var recipient in message.To)
+        {
+            mailMessage.To.Add(recipient);
+        }
+
+
+        using var client = new SmtpClient
+        {
+            Host = _config.SmtpServer,
+            Port = _config.Port,
+            EnableSsl = _config.EnableSsl,
+            Credentials = new NetworkCredential(_config.Username, _config.Password)
+        };
+
+        await client.SendMailAsync(mailMessage);
+    }
+
+
 
 }
