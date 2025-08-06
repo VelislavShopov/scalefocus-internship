@@ -17,10 +17,20 @@ namespace UserAPI
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Many-to-many: User <-> Role
-            modelBuilder.Entity<User>()
-                .HasMany(e => e.Roles)
-                .WithMany(e => e.Users)
-                .UsingEntity<UserRole>();
+            modelBuilder.Entity<UserRole>(entity =>
+            {
+                entity.ToTable("UserRoles"); // Ensures EF maps to correct SQL table name
+
+                entity.HasKey(e => new { e.UserId, e.RoleId });
+
+                entity.HasOne<User>()
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId);
+
+                entity.HasOne<Role>()
+                    .WithMany()
+                    .HasForeignKey(e => e.RoleId);
+            });
 
 
             modelBuilder.Entity<User>()
