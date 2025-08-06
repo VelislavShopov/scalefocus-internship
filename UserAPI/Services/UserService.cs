@@ -75,13 +75,13 @@ namespace UserAPI.Services
 
             if (user == null)
             {
-                return null;
+                throw new KeyNotFoundException();
             }
 
             if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
                 == PasswordVerificationResult.Failed)
             {
-                return null;
+                throw new UnauthorizedAccessException();
             }
 
             return user;

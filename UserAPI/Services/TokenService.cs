@@ -106,7 +106,7 @@ namespace UserAPI.Services
 
             if (!_configuration.GetSection("AppSettings:Audience").Get<List<string>>().Contains(audience))
             {
-                throw new Exception("Audience not valid.");
+                throw new TokenException("Audience not valid.");
             }
 
             var tokenDescriptor = new JwtSecurityToken(

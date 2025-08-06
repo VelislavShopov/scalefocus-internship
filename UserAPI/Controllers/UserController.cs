@@ -88,19 +88,23 @@ namespace UserAPI.Controllers
         [Route("login")]
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginUserDTO request)
         {
-            var user = await _userService.LoginAsync(request);
 
-            if (user == null)
+            try
             {
-
-                return BadRequest("Invalid username or password.");
-
+                var user = await _userService.LoginAsync(request);
+                var response = await _tokenService.CreatetokenResponse(user, request.Audience);
+                return Ok(response);
             }
-
-            var response = await _tokenService.CreatetokenResponse(user, request.Audience);
-
-
-            return Ok(response);
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound("Invalid username.");
+            }catch (UnauthorizedAccessException ex)
+            {
+                return BadRequest("Wrong username or password.");
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
         }
 
