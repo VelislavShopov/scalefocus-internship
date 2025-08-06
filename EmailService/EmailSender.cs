@@ -18,31 +18,7 @@ public class EmailSender : IEmailSender
       
     }
 
-    public void SendEmail(Message message)
-    {
-        using var smtp = new SmtpClient
-        {
-            Host = _config.SmtpServer,
-            Port = _config.Port,
-            EnableSsl = true,
-            Credentials = new NetworkCredential(_config.Username, _config.Password)
-        };
-
-        var mail = new MailMessage
-        {
-            From = new MailAddress(_config.From),
-            Subject = message.Subject,
-            Body = message.Content,
-            IsBodyHtml = false
-        };
-
-        foreach (var toAddress in message.To)
-        {
-            mail.To.Add(new MailAddress(toAddress));
-        }
-
-        smtp.Send(mail);
-    }
+   
 
     public async Task SendEmailAsync(Message message)
     {

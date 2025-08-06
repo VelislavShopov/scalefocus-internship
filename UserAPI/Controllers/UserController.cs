@@ -20,7 +20,7 @@ namespace UserAPI.Controllers
 
     [ApiController]
     [Route("[controller]s")]
-    public class UserController : Controller
+    public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
@@ -42,7 +42,6 @@ namespace UserAPI.Controllers
         public async Task<ActionResult<List<User>>> GetUsersList()
         {
             var message = new Message(new string[] { "test@mailinator.com" }, "Test Email", "This is the content of our email");
-            _emailSender.SendEmail(message);
             return await _userService.GetAllUsers();
         }
 
