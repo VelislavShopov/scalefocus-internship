@@ -23,17 +23,13 @@ namespace UserAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IUserRepository _userRepository;
-        private readonly UserDbContext _context;
-        private readonly IEmailSender _emailSender;
 
 
-        public UserController(IUserService userService, IUserRepository userRepository, UserDbContext context, IEmailSender emailSender)
+
+        public UserController(IUserService userService)
         {
             _userService = userService;
-            _userRepository = userRepository;
-            _context = context;
-            _emailSender = emailSender;
+
 
         }
 
