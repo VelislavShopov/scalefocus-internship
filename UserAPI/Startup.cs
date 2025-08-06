@@ -76,6 +76,8 @@ namespace UserAPI
                     ValidAudiences = audiences,
 
                     ValidateLifetime = true,
+
+                    ClockSkew = TimeSpan.Zero,
                 };
 
             });

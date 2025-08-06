@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using UserAPI.DTOs;
+using UserAPI.Exceptions;
 using UserAPI.Models;
 using UserAPI.Repositories;
 
@@ -14,7 +15,6 @@ namespace UserAPI.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly ITokenRepository _tokenRepository;
-
         private readonly IConfiguration _configuration;
 
         public TokenService(IUserRepository userRepository,ITokenRepository tokenRepository, IConfiguration configuration)
@@ -22,6 +22,11 @@ namespace UserAPI.Services
             _tokenRepository = tokenRepository;
             _userRepository = userRepository;
             _configuration = configuration;
+        }
+
+        public async Task<TokenResponseDTO> CreatetokenResponse(User user, string audience)
+        {
+            return new TokenResponseDTO { AccessToken = CreateToken(user, audience).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
         }
 
         public async Task<TokenResponseDTO> GetTokenResponse(RefreshTokenRequestDTO request)
@@ -33,23 +38,23 @@ namespace UserAPI.Services
 
             if (refreshToken == null)
             {
-                throw new Exception();
+                throw new TokenException("The user doesn't exist or doesn't have a refresh token.");
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(request.RefreshToken, refreshToken.Token))
+            if (!BCrypt.Net.BCrypt.Verify(request.RefreshToken, refreshToken.RefreshTokenValue))
             {
-                throw new Exception();
+                throw new TokenException("Invalid refresh token.");
             }
 
-            if (refreshToken.RefreshTokenExpiryTime < DateTime.UtcNow)
+            if (refreshToken.ExpiryTime < DateTime.UtcNow)
             {
                 _tokenRepository.DeleteRefreshToken(refreshToken);
-                throw new Exception();
+                throw new TokenException("The token has expired.");
             }
 
             var user = await _userRepository.GetUser(refreshToken.UserId);
 
-            var accessToken = await CreateToken(user);
+            var accessToken = await CreateToken(user,request.Audience);
 
             var response = new TokenResponseDTO()
             {
@@ -69,7 +74,6 @@ namespace UserAPI.Services
 
             rng.GetBytes(randomNumber);
 
-
             var token = Convert.ToBase64String(randomNumber);
 
             var hashedToken = BCrypt.Net.BCrypt.HashPassword(token);
@@ -77,7 +81,7 @@ namespace UserAPI.Services
             return (token,hashedToken);
         }
 
-        public async Task<string> CreateToken(User user)
+        public async Task<string> CreateToken(User user,string audience)
         {
             // loading the roles and if there is an admin role it is what is send in the token, can be changed later!
             var roles = await _userRepository.GetRolesForUser(user);
@@ -89,24 +93,26 @@ namespace UserAPI.Services
                 role = "admin";
             }
 
-
             var claims = new List<Claim>
             {
-
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(ClaimTypes.Name,user.Username),
-                new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
                 new Claim(ClaimTypes.Role,role)
             };
-
 
             var key = new SymmetricSecurityKey(Convert.FromBase64String(_configuration.GetValue<string>("AppSettings:Token")));
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            if (!_configuration.GetSection("AppSettings:Audience").Get<List<string>>().Contains(audience))
+            {
+                throw new Exception("Audience not valid.");
+            }
+
             var tokenDescriptor = new JwtSecurityToken(
 
                 issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
-                audience: "events_api",
+                audience: audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: creds
@@ -114,12 +120,6 @@ namespace UserAPI.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
-
-        }
-
-        public async Task<TokenResponseDTO> CreatetokenResponse(User user)
-        {
-            return new TokenResponseDTO { AccessToken = CreateToken(user).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
         }
 
 
@@ -134,15 +134,13 @@ namespace UserAPI.Services
                 await _tokenRepository.DeleteRefreshToken(currentRefreshToken);
             }
 
-
             var refreshToken = GenerateRefreshtoken();
-
 
             var newRefreshToken = new RefreshToken()
             {
                 UserId = user.Id,
-                Token = refreshToken.hashedToken,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
+                RefreshTokenValue = refreshToken.hashedToken,
+                ExpiryTime = DateTime.UtcNow.AddDays(7)
             };
 
             await _tokenRepository.AddRefreshToken(newRefreshToken);
@@ -150,6 +148,5 @@ namespace UserAPI.Services
             return refreshToken.token;
 
         }
-
     }
 }

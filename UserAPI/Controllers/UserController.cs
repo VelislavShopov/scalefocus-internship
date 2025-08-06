@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using UserAPI.DTOs;
+using UserAPI.Exceptions;
 using UserAPI.Models;
 using UserAPI.Services;
 
@@ -55,19 +58,29 @@ namespace UserAPI.Controllers
         }
 
         [HttpDelete]
+        [Authorize]
         [Route("{id}")]
         public async Task<ActionResult> DeleteUser(Guid id)
         {
             try
             {
-                await _userService.DeleteUser(id);
+                var loggedUserIdString = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+                var loggedUserId = Guid.Parse(loggedUserIdString);
+                await _userService.DeleteUser(id, loggedUserId);
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound("There is no user with the given id.");
             }
-
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized();
+            }
+            catch (Exception ex) 
+            {
+                return BadRequest(ex.Message);
+            }
         }
         //Редактиран е Login методът с токените.
         //Логиката с refresh токените е готова, както и генерирането на токена.
@@ -84,7 +97,7 @@ namespace UserAPI.Controllers
 
             }
 
-            var response = await _tokenService.CreatetokenResponse(user);
+            var response = await _tokenService.CreatetokenResponse(user, request.Audience);
 
 
             return Ok(response);
@@ -120,12 +133,14 @@ namespace UserAPI.Controllers
                 var result = await _tokenService.GetTokenResponse(request);
                 return Ok(result);
             }
+            catch (TokenException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
             catch (Exception ex) 
             {
-                return BadRequest("Invalid refresh token");
+                return StatusCode(500, ex.Message);
             }
-            
-
         }
 
     }

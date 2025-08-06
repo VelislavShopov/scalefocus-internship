@@ -5,7 +5,6 @@ namespace UserAPI.Repositories
 {
     public interface ITokenRepository
     {
-
         Task<RefreshToken?> GetRefreshToken(RefreshTokenRequestDTO request);
 
         Task<RefreshToken?> GetRefreshTokenByUserId(Guid userId);
@@ -13,6 +12,5 @@ namespace UserAPI.Repositories
         Task DeleteRefreshToken(RefreshToken refreshToken);
 
         Task AddRefreshToken(RefreshToken newRefreshToken);
-
     }
 }

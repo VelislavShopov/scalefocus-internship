@@ -42,6 +42,11 @@ namespace UserAPI.Repositories
         public async Task DeleteUser(Guid id)
         {
             var user = await Users.FindAsync(id);
+            if (user == null)
+            {
+                throw new KeyNotFoundException();
+            }
+
             Users.Remove(user);
             await SaveChangesAsync();
 
@@ -62,14 +67,15 @@ namespace UserAPI.Repositories
         public async Task<User> GetUserByUsername(string username)
         {
             var user = await Users.FirstOrDefaultAsync(u => u.Username == username);
+
             return user;
         }
 
         public async Task<List<UserRole>> GetRolesForUser(User user)
         {
             var userRoles = await UserRoles.Where(x => x.UserId == user.Id).ToListAsync();
+
             return userRoles;
         }
-
     }
 }

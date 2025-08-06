@@ -16,13 +16,10 @@ namespace UserAPI.Services
     {
         private readonly IUserRepository _userRepository;
 
-
         public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
-
-
 
         public async Task<List<User>> GetAllUsers()
         {
@@ -31,9 +28,7 @@ namespace UserAPI.Services
         
         // Create метод направен от Никола Гочев
         public async Task<User> CreateUser(CreateUserDTO user)
-
         {
-
             // проверяваме дали паролата и потвържедението на парола съвпадат
 
             if (user.Password != user.ConfirmPassword)
@@ -58,12 +53,16 @@ namespace UserAPI.Services
             return newUser;
         }
 
-        public async Task DeleteUser(Guid id)
+        public async Task DeleteUser(Guid id, Guid loggedUserId)
         {
+            if (id != loggedUserId)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
             await _userRepository.DeleteUser(id);
 
         }
-
 
         public async Task<User?> GetUser(Guid id)
         {
@@ -79,8 +78,6 @@ namespace UserAPI.Services
                 return null;
             }
 
-
-
             if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
                 == PasswordVerificationResult.Failed)
             {
@@ -89,8 +86,5 @@ namespace UserAPI.Services
 
             return user;
         }
-
-
     }
-
 }

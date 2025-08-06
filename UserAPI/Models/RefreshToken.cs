@@ -6,9 +6,9 @@ namespace UserAPI.Models
     {
         [Key]
         public int Id { get; set; }
-        public string Token { get; set; }
+        public string RefreshTokenValue { get; set; }
 
-        public DateTime RefreshTokenExpiryTime { get; set; }
+        public DateTime ExpiryTime { get; set; }
 
         public Guid UserId { get; set; }
 
