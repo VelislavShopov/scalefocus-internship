@@ -24,6 +24,11 @@ namespace UserAPI.Services
             _configuration = configuration;
         }
 
+        public async Task<TokenResponseDTO> CreatetokenResponse(User user, string audience)
+        {
+            return new TokenResponseDTO { AccessToken = CreateToken(user, audience).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
+        }
+
         public async Task<TokenResponseDTO> GetTokenResponse(RefreshTokenRequestDTO request)
         {
             //проверяваме дали е валиден -> взимаме userId -> правим access token + new refresh token
@@ -49,7 +54,7 @@ namespace UserAPI.Services
 
             var user = await _userRepository.GetUser(refreshToken.UserId);
 
-            var accessToken = await CreateToken(user);
+            var accessToken = await CreateToken(user,request.Audience);
 
             var response = new TokenResponseDTO()
             {
@@ -76,7 +81,7 @@ namespace UserAPI.Services
             return (token,hashedToken);
         }
 
-        public async Task<string> CreateToken(User user)
+        public async Task<string> CreateToken(User user,string audience)
         {
             // loading the roles and if there is an admin role it is what is send in the token, can be changed later!
             var roles = await _userRepository.GetRolesForUser(user);
@@ -90,9 +95,8 @@ namespace UserAPI.Services
 
             var claims = new List<Claim>
             {
-
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(ClaimTypes.Name,user.Username),
-                new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
                 new Claim(ClaimTypes.Role,role)
             };
 
@@ -100,10 +104,15 @@ namespace UserAPI.Services
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            if (!_configuration.GetSection("AppSettings:Audience").Get<List<string>>().Contains(audience))
+            {
+                throw new Exception("Audience not valid.");
+            }
+
             var tokenDescriptor = new JwtSecurityToken(
 
                 issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
-                audience: "events_api",
+                audience: audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: creds
@@ -113,10 +122,7 @@ namespace UserAPI.Services
             return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
         }
 
-        public async Task<TokenResponseDTO> CreatetokenResponse(User user)
-        {
-            return new TokenResponseDTO { AccessToken = CreateToken(user).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
-        }
+
 
         private async Task<string> GenerateAndSaveRefreshtokenAsync(User user)
         {

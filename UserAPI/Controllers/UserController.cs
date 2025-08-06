@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using UserAPI.DTOs;
 using UserAPI.Exceptions;
@@ -63,7 +64,7 @@ namespace UserAPI.Controllers
         {
             try
             {
-                var loggedUserIdString = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).ToString().Split(' ')[1];
+                var loggedUserIdString = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
                 var loggedUserId = Guid.Parse(loggedUserIdString);
                 await _userService.DeleteUser(id, loggedUserId);
                 return NoContent();
@@ -96,7 +97,7 @@ namespace UserAPI.Controllers
 
             }
 
-            var response = await _tokenService.CreatetokenResponse(user);
+            var response = await _tokenService.CreatetokenResponse(user, request.Audience);
 
 
             return Ok(response);

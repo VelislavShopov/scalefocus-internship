@@ -24,6 +24,8 @@
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
 
+        public string Audience {  get; set; } = string.Empty;
+
     }
 
 }
