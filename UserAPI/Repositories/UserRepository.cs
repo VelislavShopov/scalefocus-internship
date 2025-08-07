@@ -67,6 +67,14 @@ namespace UserAPI.Repositories
         public async Task<User> GetUserByUsername(string username)
         {
             var user = await Users.FirstOrDefaultAsync(u => u.Username == username);
+            return user;
+        }
+
+        public async Task<User> GetUserByEmail(string email)
+        {
+            var user = await Users.FirstOrDefaultAsync(u => u.Email == email);
+            return user;
+       }
 
             return user;
         }
@@ -77,5 +85,18 @@ namespace UserAPI.Repositories
 
             return userRoles;
         }
+
+        public async Task<User?> GetUserByResetToken(string token)
+        {
+            return await Users
+                .FirstOrDefaultAsync(u => u.PasswordResetToken == token);
+        }
+
+        public async Task UpdateUser(User user)
+        {
+            Users.Update(user);
+            await SaveChangesAsync();
+        }
+
     }
 }

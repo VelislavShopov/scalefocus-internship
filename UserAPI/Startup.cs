@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
+using EmailService;
 using UserAPI.Helpers;
 namespace UserAPI
 {
@@ -20,8 +21,13 @@ namespace UserAPI
         }
 
         public void ConfigureServices(IServiceCollection services)
+
         {
+
+            services.Configure<EmailConfiguration>(Configuration.GetSection("EmailConfiguration"));
+            services.AddScoped<IEmailSender, EmailSender>();
             services.AddControllers();
+            services.AddControllersWithViews();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(c =>
             {
@@ -108,15 +114,20 @@ namespace UserAPI
                 app.UseDeveloperExceptionPage();
 
             }
-
+           
             app.UseRouting();
 
 
             app.UseAuthentication();
             app.UseAuthorization();
-            
 
-            app.UseEndpoints(endpoints => endpoints.MapControllers());
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+            });
 
         }
     }

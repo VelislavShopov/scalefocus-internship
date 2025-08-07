@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using EmailService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
@@ -9,11 +12,15 @@ using System.Security.Claims;
 using UserAPI.DTOs;
 using UserAPI.Exceptions;
 using UserAPI.Models;
+using UserAPI.Repositories;
 using UserAPI.Services;
 using UserAPI.Helpers;
 
 namespace UserAPI.Controllers
+
 {
+
+
     [ApiController]
     [Route("[controller]s")]
     public class UserController : ControllerBase
@@ -121,7 +128,7 @@ namespace UserAPI.Controllers
 
         }
 
-        
+
         [HttpGet]
         [Authorize]
         [Route("auth-test")]
@@ -160,5 +167,56 @@ namespace UserAPI.Controllers
             }
         }
 
+
+
+        [HttpPut("change-username")]
+
+        public async Task<IActionResult> ChangeUsername(ChangeUsernameDTO request)
+        {
+            var result = await _userService.ChangeUsername(
+                request.OldUsername,
+                request.NewUsername,
+                request.Email,
+                request.Password
+            );
+
+
+            if (result == "Username successfully changed.")
+                return Ok(new { message = result });
+
+            return BadRequest(new { message = result });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest("Invalid request data.");
+
+            var baseUrl = "https://localhost:7264/reset-password";
+
+            var result = await _userService.ForgotPassword(request.Email!, baseUrl);
+
+            if (!result)
+                return BadRequest("Invalid request.");
+
+            return Ok("Password reset instructions have been sent to your email.");
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetPassword)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest("Invalid request data.");
+
+            var result = await _userService.ResetPassword(resetPassword.Token, resetPassword.newPassword);
+
+            if (!result)
+                return BadRequest("Invalid request.");
+
+            return Ok("Password reset successfully.");
+        }
+
     }
 }
+
