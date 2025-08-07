@@ -4,14 +4,17 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.ComponentModel;
-using System.Security.Cryptography;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using UserAPI.DTOs;
+using UserAPI.Exceptions;
 using UserAPI.Models;
 using UserAPI.Repositories;
 using UserAPI.Services;
-
+using UserAPI.Helpers;
 
 namespace UserAPI.Controllers
 
@@ -23,21 +26,20 @@ namespace UserAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly ITokenService _tokenService;
+        private readonly IJWTHelper _jwtHelper;
 
-
-
-        public UserController(IUserService userService)
+        public UserController(IUserService userService,ITokenService tokenService, IJWTHelper jWTHelper)
         {
+            _jwtHelper = jWTHelper;
             _userService = userService;
-
-
+            _tokenService = tokenService;
         }
 
 
         [HttpGet]
         public async Task<ActionResult<List<User>>> GetUsersList()
         {
-            var message = new Message(new string[] { "test@mailinator.com" }, "Test Email", "This is the content of our email");
             return await _userService.GetAllUsers();
         }
 
@@ -45,8 +47,19 @@ namespace UserAPI.Controllers
 
         public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
-            await _userService.CreateUser(userDTO);
-            return Created();
+            try
+            {
+                await _userService.CreateUser(userDTO);
+                return Created();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex) 
+            {
+                return StatusCode(500,ex.Message);
+            }
         }
 
         [HttpGet]
@@ -57,27 +70,39 @@ namespace UserAPI.Controllers
             {
                 return Ok(await _userService.GetUser(id));
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
             }
-
+            catch (Exception ex) 
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpDelete]
+        [Authorize]
         [Route("{id}")]
         public async Task<ActionResult> DeleteUser(Guid id)
         {
             try
             {
-                await _userService.DeleteUser(id);
+                var loggedUserId = _jwtHelper.GetCurrentUserId();
+                await _userService.DeleteUser(id, loggedUserId);
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound("There is no user with the given id.");
             }
-
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized();
+            }
+            catch (Exception ex) 
+            {
+                return StatusCode(500,ex.Message);
+            }
         }
         //Редактиран е Login методът с токените.
         //Логиката с refresh токените е готова, както и генерирането на токена.
@@ -85,16 +110,21 @@ namespace UserAPI.Controllers
         [Route("login")]
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginUserDTO request)
         {
-            var result = await _userService.LoginAsync(request);
-            if (result is null)
+
+            try
             {
-
-                return BadRequest("Invalid username or password.");
-
+                var user = await _userService.LoginAsync(request);
+                var response = await _tokenService.CreateAccessAndRefreshTokenResponse(user, request.Audience);
+                return Ok(response);
             }
-
-
-            return Ok(result);
+            catch (Exception ex) when (ex is KeyNotFoundException || ex is UnauthorizedAccessException) 
+            {
+                return BadRequest("Invalid username or password!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
         }
 
@@ -111,7 +141,7 @@ namespace UserAPI.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpGet("admin-only")]
-        public IActionResult AAdminOnlyEndPoint()
+        public IActionResult AdminOnlyEndPoint()
         {
 
             return Ok("you are an admin");
@@ -122,17 +152,19 @@ namespace UserAPI.Controllers
 
         public async Task<ActionResult<TokenResponseDTO>> RefreshToken(RefreshTokenRequestDTO request)
         {
-
-            var result = await _userService.RefreshTokenAsync(request);
-            if (result is null || result.AccessToken is null || result.RefreshToken is null)
+            try
             {
-
-                return Unauthorized("Invalid refresh token");
-
+                var result = await _tokenService.GetTokenResponse(request);
+                return Ok(result);
             }
-
-            return Ok(result);
-
+            catch (TokenException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex) 
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
 

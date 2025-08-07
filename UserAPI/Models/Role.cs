@@ -5,16 +5,15 @@ using System.Text.Json.Serialization;
 namespace UserAPI.Models
 {
 
-        public class Role
-        {
-            [Key, ForeignKey("User")]
-            public Guid UserId { get; set; }
+    public class Role
+    {
+        [Key]
+        public int Id { get; set; }
 
-            [Required]
-            public string Name { get; set; }
+        [Required]
+        public string Name { get; set; }
 
-            [JsonIgnore]
-            public User User { get; set; } = null!;
-        }
-    
+        public ICollection<User> Users { get; } = new List<User>();
+    }
+
 }

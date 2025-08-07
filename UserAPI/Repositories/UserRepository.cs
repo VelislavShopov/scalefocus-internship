@@ -30,10 +30,11 @@ namespace UserAPI.Repositories
         public async Task CreateUser(User user)
         {
             await Users.AddAsync(user);
-            await Roles.AddAsync(new Role()
+            var role = await Roles.FirstAsync(x => x.Name == "user");
+            UserRoles.Add(new UserRole()
             {
-                Name = "user",
-                UserId = user.UserId,
+                UserId = user.Id,
+                RoleId = role.Id
             });
             await SaveChangesAsync();
         }
@@ -41,6 +42,11 @@ namespace UserAPI.Repositories
         public async Task DeleteUser(Guid id)
         {
             var user = await Users.FindAsync(id);
+            if (user == null)
+            {
+                throw new KeyNotFoundException();
+            }
+
             Users.Remove(user);
             await SaveChangesAsync();
 
@@ -52,7 +58,7 @@ namespace UserAPI.Repositories
 
             if (user == null)
             {
-                throw new Exception();
+                throw new KeyNotFoundException("No user with the given id.");
             }
 
             return user;
@@ -68,106 +74,16 @@ namespace UserAPI.Repositories
         {
             var user = await Users.FirstOrDefaultAsync(u => u.Email == email);
             return user;
-        }
-
-        //Нови методи за генериране на token-и.
-
-        public async Task<TokenResponseDTO> CreatetokenResponse(User user)
-        {
-            return new TokenResponseDTO { AccessToken = CreateToken(user).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
-        }
-
-        private async Task<string> CreateToken(User user)
-        {
-
-            var role = await Roles.FirstOrDefaultAsync(r => r.UserId == user.UserId);
-            
-
-            var claims = new List<Claim>
-            {
-
-                new Claim(ClaimTypes.Name,user.Username),
-                new Claim(ClaimTypes.NameIdentifier,user.UserId.ToString()),
-                new Claim(ClaimTypes.Role,role?.Name ?? "user")
-            };
-
-
-            var key = new SymmetricSecurityKey(Convert.FromBase64String(_configuration.GetValue<string>("AppSettings:Token")));
-
-            var creds = new SigningCredentials(key,SecurityAlgorithms.HmacSha256);
-
-            var tokenDescriptor = new JwtSecurityToken(
-
-                issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
-                audience: _configuration.GetValue<string>("AppSettings:Audience"),
-                claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
-                signingCredentials: creds
-
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
-
-        }
-
-        private string GenerateRefreshtoken()
-        {
-
-            var randomNumber = new byte[32];
-
-            using var rng = RandomNumberGenerator.Create();
-
-            rng.GetBytes(randomNumber);
-
-            return Convert.ToBase64String(randomNumber);
-
-        }
-
-        private async Task<string> GenerateAndSaveRefreshtokenAsync(User user)
-        {
-
-            var refreshToken = GenerateRefreshtoken();
-
-            user.RefreshToken = refreshToken;
-
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-
-            await SaveChangesAsync();
-
-            return refreshToken;
-
-        }
-
-        private async Task<User?> ValidateRefreshtokenAsync(Guid userId, string refreshToken)
-        {
-
-            var user = await Users.FindAsync(userId);
-
-            if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            {
-
-                return null;
-
-            }
+       }
 
             return user;
-
         }
 
-        public async Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request)
+        public async Task<List<UserRole>> GetRolesForUser(User user)
         {
-            var user = await ValidateRefreshtokenAsync(request.UserId, request.RefreshToken);
+            var userRoles = await UserRoles.Where(x => x.UserId == user.Id).ToListAsync();
 
-            if (user is null)
-            {
-                return null;
-
-            }
-
-            return await CreatetokenResponse(user);
-
-
-
+            return userRoles;
         }
 
         public async Task<User?> GetUserByResetToken(string token)

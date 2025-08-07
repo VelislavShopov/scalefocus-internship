@@ -12,12 +12,10 @@ namespace UserAPI.Services
         Task<List<User>> GetAllUsers();
         Task<User> CreateUser(CreateUserDTO user);
 
-        Task<User> GetUser(Guid id);
-        Task DeleteUser(Guid id);
+        Task<User?> GetUser(Guid id);
+        Task DeleteUser(Guid id, Guid loggedUserId);
 
-        Task<TokenResponseDTO> LoginAsync(LoginUserDTO request);
-
-        Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request);
+        Task<User> LoginAsync(LoginUserDTO request);
 
         Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password);
 

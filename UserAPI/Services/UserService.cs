@@ -20,31 +20,38 @@ namespace UserAPI.Services
 
         private readonly IConfiguration _configuration;
 
-        private readonly UserDbContext _context;
-
         private readonly IEmailSender _emailSender;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration, UserDbContext context, IEmailSender emailSender)
+        public UserService(IUserRepository userRepository, IConfiguration configuration, IEmailSender emailSender)
         {
             _userRepository = userRepository;
             _configuration = configuration;
-            _context = context;
             _emailSender = emailSender;
 
         }
-
-
 
         public async Task<List<User>> GetAllUsers()
         {
             return await _userRepository.GetAllUsers();
         }
 
+
+        public async Task<User?> GetUser(Guid id)
+        {
+            return await _userRepository.GetUser(id);
+        }
+
         // Create метод направен от Никола Гочев
         public async Task<User> CreateUser(CreateUserDTO user)
-
         {
-            var existingEmail = await _userRepository.GetUserByEmail(user.Email);
+            // проверяваме дали паролата и потвържедението на парола съвпадат
+
+            if (user.Password != user.ConfirmPassword)
+            {
+                throw new ArgumentException("Password and Confirm Password do not match.");
+            }
+              
+              var existingEmail = await _userRepository.GetUserByEmail(user.Email);
             if (existingEmail != null)
             {
                 throw new ArgumentException("A user with this email already exists.");
@@ -55,15 +62,7 @@ namespace UserAPI.Services
             {
                 throw new ArgumentException("A user with this username already exists.");
             }
-
-
-            // проверяваме дали паролата и потвържедението на парола съвпадат
-
-            if (user.Password != user.ConfirmPassword)
-            {
-                throw new ArgumentException("Password and Confirm Password do not match.");
-            }
-
+            
             var newUser = new User
             {
                 UserId = Guid.NewGuid(),
@@ -81,47 +80,33 @@ namespace UserAPI.Services
             return newUser;
         }
 
-        public async Task DeleteUser(Guid id)
+        public async Task DeleteUser(Guid id, Guid loggedUserId)
         {
+            if (id != loggedUserId)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
             await _userRepository.DeleteUser(id);
 
         }
 
-
-        public async Task<User?> GetUser(Guid id)
-        {
-            return await _userRepository.GetUser(id);
-        }
-
-        //Login метод, добавен от Георги Станков
-        //Добавил съм using userAPI.Utils;
-
-
-        public async Task<TokenResponseDTO> LoginAsync(LoginUserDTO request)
+        public async Task<User> LoginAsync(LoginUserDTO request)
         {
             var user = await _userRepository.GetUserByUsername(request.Username);
 
             if (user == null)
             {
-                return null;
+                throw new KeyNotFoundException();
             }
-
-
 
             if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
                 == PasswordVerificationResult.Failed)
             {
-                return null;
+                throw new UnauthorizedAccessException();
             }
 
-            return await _userRepository.CreatetokenResponse(user);
-        }
-
-        public async Task<TokenResponseDTO> RefreshTokenAsync(RefreshTokenRequestDTO request)
-        {
-
-            return await _userRepository.RefreshTokenAsync(request);
-
+            return user;
         }
 
         public async Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password)

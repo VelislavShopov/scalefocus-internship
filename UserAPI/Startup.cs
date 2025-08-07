@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 using EmailService;
+using UserAPI.Helpers;
 namespace UserAPI
 {
     public class Startup
@@ -58,7 +59,7 @@ namespace UserAPI
 
             var secret = Configuration.GetValue<string>("AppSettings:Token");
             var issuer = Configuration.GetValue<string>("AppSettings:Issuer");
-            var audience = Configuration.GetValue<string>("AppSettings:Audience");
+            var audiences = Configuration.GetSection("AppSettings:Audience").Get<List<string>>();
             var key = Convert.FromBase64String(secret);
 
             services.AddAuthentication(x =>
@@ -79,17 +80,28 @@ namespace UserAPI
                     ValidIssuer = issuer,
 
                     ValidateAudience = true,
-                    ValidAudience = audience,
+                    ValidAudiences = audiences,
 
                     ValidateLifetime = true,
+
+                    ClockSkew = TimeSpan.Zero,
+
+                    RoleClaimType = "rol"
                 };
 
             });
+
+            services.AddHttpContextAccessor();
 
             services.AddDbContext<UserDbContext>(options => options.UseSqlServer(Configuration["ConnectionStrings:Default"]));
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUserRepository, UserRepository>();
+
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<ITokenRepository, TokenRepository>();
+
+            services.AddScoped<IJWTHelper, JWTHelper>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
