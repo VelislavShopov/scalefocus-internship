@@ -12,8 +12,8 @@ using UserAPI;
 namespace UserAPI.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250806131842_changed_userrole")]
-    partial class changed_userrole
+    [Migration("20250807154414_added_reset_token_tablee")]
+    partial class added_reset_token_tablee
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,6 +38,30 @@ namespace UserAPI.Migrations
                     b.HasIndex("UsersId");
 
                     b.ToTable("RoleUser");
+                });
+
+            modelBuilder.Entity("UserAPI.Models.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("PasswordResetTokenExpires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordResetTokenValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens");
                 });
 
             modelBuilder.Entity("UserAPI.Models.RefreshToken", b =>
@@ -144,6 +168,17 @@ namespace UserAPI.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("UserAPI.Models.PasswordResetToken", b =>
+                {
+                    b.HasOne("UserAPI.Models.User", "User")
+                        .WithMany("PasswordResetTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("UserAPI.Models.RefreshToken", b =>
                 {
                     b.HasOne("UserAPI.Models.User", "User")
@@ -172,6 +207,8 @@ namespace UserAPI.Migrations
 
             modelBuilder.Entity("UserAPI.Models.User", b =>
                 {
+                    b.Navigation("PasswordResetTokens");
+
                     b.Navigation("RefreshToken");
                 });
 #pragma warning restore 612, 618

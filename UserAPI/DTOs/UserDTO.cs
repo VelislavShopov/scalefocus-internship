@@ -28,4 +28,17 @@
 
     }
 
+
+
+    public class ChangeUsernameDTO
+    {
+        public string OldUsername { get; set; } = string.Empty;
+        public string NewUsername { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+
+
+
 }

@@ -1,15 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace UserAPI.Models
 {
     public class User
     {
         [Key]
+        [Required]
         public Guid Id { get; set; }
-
-        //Да добавим username? -Георги Станков
-
-        //Добавен е string.empty на всеки параметър с цел защита от грешки при изпълнение.-Георги Станков
 
         [Required]
         public string Username { get; set; } = string.Empty;
@@ -28,8 +26,8 @@ namespace UserAPI.Models
 
         public List<Role> Roles { get; } = [];
 
-        public RefreshToken? RefreshToken { get; set; }
-        
+        public List<PasswordResetToken> PasswordResetTokens { get; set; } = [];
 
+        public RefreshToken? RefreshToken { get; set; }
     }
 }

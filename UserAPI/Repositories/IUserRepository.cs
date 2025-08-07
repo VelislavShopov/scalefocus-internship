@@ -14,7 +14,10 @@ namespace UserAPI.Repositories
 
         Task<User> GetUserByUsername(string username);
 
-        Task<List<UserRole>> GetRolesForUser(User user);
+        Task<User> GetUserByEmail(string email);
 
+        Task<List<UserRole>> GetRolesForUser(User user);
+      
+        Task UpdateUser(User user);
     }
 }

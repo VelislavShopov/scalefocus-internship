@@ -37,5 +37,23 @@ namespace UserAPI.Repositories
             await RefreshTokens.AddAsync(token);
             await SaveChangesAsync();
         }
+
+        public async Task CreatePasswordResetToken(PasswordResetToken token)
+        {
+            await PasswordResetTokens.AddAsync(token);
+            await SaveChangesAsync();
+        }
+        public async Task<PasswordResetToken?> GetPasswordResetTokenByValue(string token)
+        {
+            var passwordresettoken = await PasswordResetTokens.FirstOrDefaultAsync(x => x.PasswordResetTokenValue == token);
+            return passwordresettoken;
+        }
+
+        public async Task DeletePasswordResetToken(PasswordResetToken passwordresettoken)
+        {
+            PasswordResetTokens.Remove(passwordresettoken);
+            await SaveChangesAsync();
+        }
+
     }
 }

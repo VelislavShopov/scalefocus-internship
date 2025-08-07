@@ -67,9 +67,14 @@ namespace UserAPI.Repositories
         public async Task<User> GetUserByUsername(string username)
         {
             var user = await Users.FirstOrDefaultAsync(u => u.Username == username);
-
             return user;
         }
+
+        public async Task<User> GetUserByEmail(string email)
+        {
+            var user = await Users.FirstOrDefaultAsync(u => u.Email == email);
+            return user;
+       }
 
         public async Task<List<UserRole>> GetRolesForUser(User user)
         {
@@ -77,5 +82,12 @@ namespace UserAPI.Repositories
 
             return userRoles;
         }
+
+        public async Task UpdateUser(User user)
+        {
+            Users.Update(user);
+            await SaveChangesAsync();
+        }
+
     }
 }

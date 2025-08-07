@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using EmailService;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,9 +18,18 @@ namespace UserAPI.Services
     {
         private readonly IUserRepository _userRepository;
 
-        public UserService(IUserRepository userRepository)
+        private readonly IConfiguration _configuration;
+
+        private readonly IEmailSender _emailSender;
+
+        private readonly ITokenRepository _tokenRepository;
+
+        public UserService(IUserRepository userRepository, IConfiguration configuration, IEmailSender emailSender, ITokenRepository tokenRepository)
         {
             _userRepository = userRepository;
+            _tokenRepository = tokenRepository;
+            _configuration = configuration;
+            _emailSender = emailSender;
         }
 
         public async Task<List<User>> GetAllUsers()
@@ -41,7 +52,19 @@ namespace UserAPI.Services
             {
                 throw new ArgumentException("Password and Confirm Password do not match.");
             }
+              
+              var existingEmail = await _userRepository.GetUserByEmail(user.Email);
+            if (existingEmail != null)
+            {
+                throw new ArgumentException("A user with this email already exists.");
+            }
 
+            var existingUsername = await _userRepository.GetUserByUsername(user.Username);
+            if (existingUsername != null)
+            {
+                throw new ArgumentException("A user with this username already exists.");
+            }
+            
             var newUser = new User
             {
                 Id = Guid.NewGuid(),
@@ -87,5 +110,84 @@ namespace UserAPI.Services
 
             return user;
         }
+
+        public async Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password)
+        {
+            var user = await _userRepository.GetUserByUsername(oldUsername);
+            if (user == null) return "User with the old username not found.";
+
+            if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
+                return "Email does not match our records.";
+
+            var passwordVerificationResult = new PasswordHasher<User>()
+                .VerifyHashedPassword(user, user.PasswordHash, password);
+            if (passwordVerificationResult == PasswordVerificationResult.Failed)
+                return "Incorrect password.";
+
+            var existingUser = await _userRepository.GetUserByUsername(newUsername);
+            if (existingUser != null)
+                return "New username is already taken.";
+
+            user.Username = newUsername;
+            await _userRepository.UpdateUser(user); 
+
+            return "Username successfully changed.";
+        }
+
+        // Забравена парола
+        public async Task<bool> ForgotPassword(string email, string baseUrl)
+        {
+            var user = await _userRepository.GetUserByEmail(email);
+            if (user == null)
+                return false;
+
+            var tokenBytes = RandomNumberGenerator.GetBytes(64);
+            var token = Convert.ToBase64String(tokenBytes);
+
+            var passwordResetToken = new PasswordResetToken
+            {
+                UserId = user.Id,
+                PasswordResetTokenValue = token,
+                PasswordResetTokenExpires = DateTime.UtcNow.AddMinutes(5)
+            };
+            
+            await _tokenRepository.CreatePasswordResetToken(passwordResetToken);
+
+            var callbackUrl = $"{baseUrl}?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
+
+            var message = new Message(
+                new[] { user.Email },
+                "Password Reset",
+                $"Please reset your password using this link: {callbackUrl}"
+            );
+            await _emailSender.SendEmailAsync(message);
+
+            return true;
+        }
+
+        // Ресет на парола
+        public async Task<bool> ResetPassword(string token, string newPassword)
+        {
+            var decodedToken = Uri.UnescapeDataString(token);
+
+            var passwordResetToken = await _tokenRepository.GetPasswordResetTokenByValue(decodedToken);
+
+            var user = await GetUser(passwordResetToken.UserId);
+            if (user == null)
+                return false;
+
+            var passwordHasher = new PasswordHasher<User>();
+            var hashedPassword = passwordHasher.HashPassword(user, newPassword);
+
+            user.PasswordHash = hashedPassword;
+
+            _tokenRepository.DeletePasswordResetToken(passwordResetToken);
+
+            await _userRepository.UpdateUser(user);
+
+            return true;
+        }
     }
 }
+
+
