@@ -148,7 +148,7 @@ namespace UserAPI.Services
             {
                 UserId = user.Id,
                 PasswordResetTokenValue = token,
-                PasswordResetTokenExpires = DateTime.UtcNow.AddMinutes(5)
+                ExpiryTime = DateTime.UtcNow.AddMinutes(5)
             };
             
             await _tokenRepository.CreatePasswordResetToken(passwordResetToken);
