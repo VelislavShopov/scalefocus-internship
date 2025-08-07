@@ -14,6 +14,8 @@ namespace UserAPI
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Many-to-many: User <-> Role
@@ -38,6 +40,11 @@ namespace UserAPI
                 .WithOne(e => e.User)
                 .HasForeignKey<RefreshToken>(e => e.UserId);
 
+            modelBuilder.Entity<User>()
+                .HasMany(e=> e.PasswordResetTokens)
+                .WithOne(e=> e.User)
+                .HasForeignKey(e => e.UserId)
+                .IsRequired();
         }
 
     }

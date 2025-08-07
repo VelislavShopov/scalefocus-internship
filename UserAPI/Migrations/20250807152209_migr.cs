@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UserAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class migr : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,7 +33,9 @@ namespace UserAPI.Migrations
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PasswordResetToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PasswordResetTokenExpires = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -46,8 +48,8 @@ namespace UserAPI.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Token = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RefreshTokenValue = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -62,6 +64,30 @@ namespace UserAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RoleUser",
+                columns: table => new
+                {
+                    RolesId = table.Column<int>(type: "int", nullable: false),
+                    UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RoleUser", x => new { x.RolesId, x.UsersId });
+                    table.ForeignKey(
+                        name: "FK_RoleUser_Roles_RolesId",
+                        column: x => x.RolesId,
+                        principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RoleUser_Users_UsersId",
+                        column: x => x.UsersId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserRoles",
                 columns: table => new
                 {
@@ -70,7 +96,7 @@ namespace UserAPI.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserRoles", x => new { x.RoleId, x.UserId });
+                    table.PrimaryKey("PK_UserRoles", x => new { x.UserId, x.RoleId });
                     table.ForeignKey(
                         name: "FK_UserRoles_Roles_RoleId",
                         column: x => x.RoleId,
@@ -92,9 +118,14 @@ namespace UserAPI.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRoles_UserId",
+                name: "IX_RoleUser_UsersId",
+                table: "RoleUser",
+                column: "UsersId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoles_RoleId",
                 table: "UserRoles",
-                column: "UserId");
+                column: "RoleId");
         }
 
         /// <inheritdoc />
@@ -102,6 +133,9 @@ namespace UserAPI.Migrations
         {
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
+                name: "RoleUser");
 
             migrationBuilder.DropTable(
                 name: "UserRoles");

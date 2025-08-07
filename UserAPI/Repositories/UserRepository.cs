@@ -76,20 +76,11 @@ namespace UserAPI.Repositories
             return user;
        }
 
-            return user;
-        }
-
         public async Task<List<UserRole>> GetRolesForUser(User user)
         {
             var userRoles = await UserRoles.Where(x => x.UserId == user.Id).ToListAsync();
 
             return userRoles;
-        }
-
-        public async Task<User?> GetUserByResetToken(string token)
-        {
-            return await Users
-                .FirstOrDefaultAsync(u => u.PasswordResetToken == token);
         }
 
         public async Task UpdateUser(User user)

@@ -12,5 +12,11 @@ namespace UserAPI.Repositories
         Task DeleteRefreshToken(RefreshToken refreshToken);
 
         Task AddRefreshToken(RefreshToken newRefreshToken);
+
+        Task CreatePasswordResetToken(PasswordResetToken newPasswordResetToken);
+
+        Task<PasswordResetToken?> GetPasswordResetTokenByValue(string token);
+
+        Task DeletePasswordResetToken(PasswordResetToken prt);
     }
 }

@@ -26,9 +26,7 @@ namespace UserAPI.Models
 
         public List<Role> Roles { get; } = [];
 
-        public string? PasswordResetToken { get; set; }
-      
-        public DateTime? PasswordResetTokenExpires { get; set; }
+        public List<PasswordResetToken> PasswordResetTokens { get; set; } = [];
 
         public RefreshToken? RefreshToken { get; set; }
     }

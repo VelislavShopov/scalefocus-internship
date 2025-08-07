@@ -22,12 +22,14 @@ namespace UserAPI.Services
 
         private readonly IEmailSender _emailSender;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration, IEmailSender emailSender)
+        private readonly ITokenRepository _tokenRepository;
+
+        public UserService(IUserRepository userRepository, IConfiguration configuration, IEmailSender emailSender, ITokenRepository tokenRepository)
         {
             _userRepository = userRepository;
+            _tokenRepository = tokenRepository;
             _configuration = configuration;
             _emailSender = emailSender;
-
         }
 
         public async Task<List<User>> GetAllUsers()
@@ -65,7 +67,7 @@ namespace UserAPI.Services
             
             var newUser = new User
             {
-                UserId = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Username = user.Username,
                 Email = user.Email,
                 FirstName = user.FirstName,
@@ -127,16 +129,7 @@ namespace UserAPI.Services
                 return "New username is already taken.";
 
             user.Username = newUsername;
-            _context.Users.Update(user);
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception)
-            {
-                return "An error occurred while saving changes.";
-            }
+            await _userRepository.UpdateUser(user); 
 
             return "Username successfully changed.";
         }
@@ -151,13 +144,16 @@ namespace UserAPI.Services
             var tokenBytes = RandomNumberGenerator.GetBytes(64);
             var token = Convert.ToBase64String(tokenBytes);
 
-            user.PasswordResetToken = token;
-            user.PasswordResetTokenExpires = DateTime.UtcNow.AddMinutes(5);
-            await _userRepository.UpdateUser(user);
+            var passwordResetToken = new PasswordResetToken
+            {
+                UserId = user.Id,
+                PasswordResetTokenValue = token,
+                PasswordResetTokenExpires = DateTime.UtcNow.AddMinutes(5)
+            };
+            
+            await _tokenRepository.CreatePasswordResetToken(passwordResetToken);
 
             var callbackUrl = $"{baseUrl}?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
-
-        
 
             var message = new Message(
                 new[] { user.Email },
@@ -174,7 +170,9 @@ namespace UserAPI.Services
         {
             var decodedToken = Uri.UnescapeDataString(token);
 
-            var user = await _userRepository.GetUserByResetToken(decodedToken);
+            var passwordResetToken = await _tokenRepository.GetPasswordResetTokenByValue(decodedToken);
+
+            var user = await GetUser(passwordResetToken.UserId);
             if (user == null)
                 return false;
 
@@ -182,8 +180,8 @@ namespace UserAPI.Services
             var hashedPassword = passwordHasher.HashPassword(user, newPassword);
 
             user.PasswordHash = hashedPassword;
-            user.PasswordResetToken = null;
-            user.PasswordResetTokenExpires = null;
+
+            _tokenRepository.DeletePasswordResetToken(passwordResetToken);
 
             await _userRepository.UpdateUser(user);
 
