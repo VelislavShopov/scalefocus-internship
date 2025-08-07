@@ -58,7 +58,7 @@ namespace UserAPI.Repositories
 
             if (user == null)
             {
-                throw new Exception();
+                throw new KeyNotFoundException("No user with the given id.");
             }
 
             return user;

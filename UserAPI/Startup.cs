@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
+using UserAPI.Helpers;
 namespace UserAPI
 {
     public class Startup
@@ -78,9 +79,13 @@ namespace UserAPI
                     ValidateLifetime = true,
 
                     ClockSkew = TimeSpan.Zero,
+
+                    RoleClaimType = "rol"
                 };
 
             });
+
+            services.AddHttpContextAccessor();
 
             services.AddDbContext<UserDbContext>(options => options.UseSqlServer(Configuration["ConnectionStrings:Default"]));
 
@@ -89,6 +94,8 @@ namespace UserAPI
 
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ITokenRepository, TokenRepository>();
+
+            services.AddScoped<IJWTHelper, JWTHelper>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

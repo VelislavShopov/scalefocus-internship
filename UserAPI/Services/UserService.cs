@@ -25,7 +25,13 @@ namespace UserAPI.Services
         {
             return await _userRepository.GetAllUsers();
         }
-        
+
+
+        public async Task<User?> GetUser(Guid id)
+        {
+            return await _userRepository.GetUser(id);
+        }
+
         // Create метод направен от Никола Гочев
         public async Task<User> CreateUser(CreateUserDTO user)
         {
@@ -62,11 +68,6 @@ namespace UserAPI.Services
 
             await _userRepository.DeleteUser(id);
 
-        }
-
-        public async Task<User?> GetUser(Guid id)
-        {
-            return await _userRepository.GetUser(id);
         }
 
         public async Task<User> LoginAsync(LoginUserDTO request)

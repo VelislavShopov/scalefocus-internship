@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using UserAPI.DTOs;
 using UserAPI.Exceptions;
+using UserAPI.Helpers;
 using UserAPI.Models;
 using UserAPI.Repositories;
 
@@ -16,17 +17,22 @@ namespace UserAPI.Services
         private readonly IUserRepository _userRepository;
         private readonly ITokenRepository _tokenRepository;
         private readonly IConfiguration _configuration;
+        private readonly IJWTHelper _jwtHelper;
 
-        public TokenService(IUserRepository userRepository,ITokenRepository tokenRepository, IConfiguration configuration)
+        public TokenService(IUserRepository userRepository,ITokenRepository tokenRepository, IConfiguration configuration, IJWTHelper jWTHelper)
         {
             _tokenRepository = tokenRepository;
             _userRepository = userRepository;
             _configuration = configuration;
+            _jwtHelper = jWTHelper;
         }
 
-        public async Task<TokenResponseDTO> CreatetokenResponse(User user, string audience)
+        public async Task<TokenResponseDTO> CreateAccessAndRefreshTokenResponse(User user, string audience)
         {
-            return new TokenResponseDTO { AccessToken = CreateToken(user, audience).Result, RefreshToken = await GenerateAndSaveRefreshtokenAsync(user) };
+            return new TokenResponseDTO {
+                AccessToken = _jwtHelper.CreateAccessToken(user, audience).Result,
+                RefreshToken = await GenerateAndSaveRefreshtokenAsync(user)
+            };
         }
 
         public async Task<TokenResponseDTO> GetTokenResponse(RefreshTokenRequestDTO request)
@@ -54,7 +60,7 @@ namespace UserAPI.Services
 
             var user = await _userRepository.GetUser(refreshToken.UserId);
 
-            var accessToken = await CreateToken(user,request.Audience);
+            var accessToken = await _jwtHelper.CreateAccessToken(user,request.Audience);
 
             var response = new TokenResponseDTO()
             {
@@ -66,64 +72,6 @@ namespace UserAPI.Services
 
         }
 
-        private (string token, string hashedToken) GenerateRefreshtoken()
-        {
-            var randomNumber = new byte[32];
-
-            using var rng = RandomNumberGenerator.Create();
-
-            rng.GetBytes(randomNumber);
-
-            var token = Convert.ToBase64String(randomNumber);
-
-            var hashedToken = BCrypt.Net.BCrypt.HashPassword(token);
-
-            return (token,hashedToken);
-        }
-
-        public async Task<string> CreateToken(User user,string audience)
-        {
-            // loading the roles and if there is an admin role it is what is send in the token, can be changed later!
-            var roles = await _userRepository.GetRolesForUser(user);
-
-            var role = "user";
-
-            if (roles.Any(x => x.RoleId == 2))
-            {
-                role = "admin";
-            }
-
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(ClaimTypes.Name,user.Username),
-                new Claim(ClaimTypes.Role,role)
-            };
-
-            var key = new SymmetricSecurityKey(Convert.FromBase64String(_configuration.GetValue<string>("AppSettings:Token")));
-
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            if (!_configuration.GetSection("AppSettings:Audience").Get<List<string>>().Contains(audience))
-            {
-                throw new TokenException("Audience not valid.");
-            }
-
-            var tokenDescriptor = new JwtSecurityToken(
-
-                issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
-                audience: audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
-                signingCredentials: creds
-
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
-        }
-
-
-
         private async Task<string> GenerateAndSaveRefreshtokenAsync(User user)
         {
 
@@ -134,7 +82,7 @@ namespace UserAPI.Services
                 await _tokenRepository.DeleteRefreshToken(currentRefreshToken);
             }
 
-            var refreshToken = GenerateRefreshtoken();
+            var refreshToken = _jwtHelper.GenerateRefreshtoken();
 
             var newRefreshToken = new RefreshToken()
             {
