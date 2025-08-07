@@ -10,7 +10,7 @@ using UserAPI.DTOs;
 using UserAPI.Exceptions;
 using UserAPI.Models;
 using UserAPI.Services;
-
+using UserAPI.Helpers;
 
 namespace UserAPI.Controllers
 {
@@ -20,9 +20,11 @@ namespace UserAPI.Controllers
     {
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
+        private readonly IJWTHelper _jwtHelper;
 
-        public UserController(IUserService userService,ITokenService tokenService)
+        public UserController(IUserService userService,ITokenService tokenService, IJWTHelper jWTHelper)
         {
+            _jwtHelper = jWTHelper;
             _userService = userService;
             _tokenService = tokenService;
         }
@@ -38,8 +40,19 @@ namespace UserAPI.Controllers
 
         public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
-            await _userService.CreateUser(userDTO);
-            return Created();
+            try
+            {
+                await _userService.CreateUser(userDTO);
+                return Created();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex) 
+            {
+                return StatusCode(500,ex.Message);
+            }
         }
 
         [HttpGet]
@@ -50,11 +63,14 @@ namespace UserAPI.Controllers
             {
                 return Ok(await _userService.GetUser(id));
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
             }
-
+            catch (Exception ex) 
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpDelete]
@@ -64,8 +80,7 @@ namespace UserAPI.Controllers
         {
             try
             {
-                var loggedUserIdString = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-                var loggedUserId = Guid.Parse(loggedUserIdString);
+                var loggedUserId = _jwtHelper.GetCurrentUserId();
                 await _userService.DeleteUser(id, loggedUserId);
                 return NoContent();
             }
@@ -79,7 +94,7 @@ namespace UserAPI.Controllers
             }
             catch (Exception ex) 
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500,ex.Message);
             }
         }
         //Редактиран е Login методът с токените.
@@ -88,19 +103,21 @@ namespace UserAPI.Controllers
         [Route("login")]
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginUserDTO request)
         {
-            var user = await _userService.LoginAsync(request);
 
-            if (user == null)
+            try
             {
-
-                return BadRequest("Invalid username or password.");
-
+                var user = await _userService.LoginAsync(request);
+                var response = await _tokenService.CreateAccessAndRefreshTokenResponse(user, request.Audience);
+                return Ok(response);
             }
-
-            var response = await _tokenService.CreatetokenResponse(user, request.Audience);
-
-
-            return Ok(response);
+            catch (Exception ex) when (ex is KeyNotFoundException || ex is UnauthorizedAccessException) 
+            {
+                return BadRequest("Invalid username or password!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
         }
 

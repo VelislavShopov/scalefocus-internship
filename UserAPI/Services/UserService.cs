@@ -25,7 +25,13 @@ namespace UserAPI.Services
         {
             return await _userRepository.GetAllUsers();
         }
-        
+
+
+        public async Task<User?> GetUser(Guid id)
+        {
+            return await _userRepository.GetUser(id);
+        }
+
         // Create метод направен от Никола Гочев
         public async Task<User> CreateUser(CreateUserDTO user)
         {
@@ -64,24 +70,19 @@ namespace UserAPI.Services
 
         }
 
-        public async Task<User?> GetUser(Guid id)
-        {
-            return await _userRepository.GetUser(id);
-        }
-
         public async Task<User> LoginAsync(LoginUserDTO request)
         {
             var user = await _userRepository.GetUserByUsername(request.Username);
 
             if (user == null)
             {
-                return null;
+                throw new KeyNotFoundException();
             }
 
             if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
                 == PasswordVerificationResult.Failed)
             {
-                return null;
+                throw new UnauthorizedAccessException();
             }
 
             return user;

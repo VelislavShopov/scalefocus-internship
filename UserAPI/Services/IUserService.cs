@@ -10,7 +10,7 @@ namespace UserAPI.Services
         Task<List<User>> GetAllUsers();
         Task<User> CreateUser(CreateUserDTO user);
 
-        Task<User> GetUser(Guid id);
+        Task<User?> GetUser(Guid id);
         Task DeleteUser(Guid id, Guid loggedUserId);
 
         Task<User> LoginAsync(LoginUserDTO request);
