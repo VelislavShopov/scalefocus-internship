@@ -85,8 +85,6 @@ namespace UserAPI
                     ValidateLifetime = true,
 
                     ClockSkew = TimeSpan.Zero,
-
-                    RoleClaimType = "rol"
                 };
 
             });

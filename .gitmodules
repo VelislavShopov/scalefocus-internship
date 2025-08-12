@@ -1,0 +1,3 @@
+[submodule "UserAPI/scalefocus-internship"]
+	path = UserAPI/scalefocus-internship
+	url = https://github.com/VelislavShopov/scalefocus-internship.git

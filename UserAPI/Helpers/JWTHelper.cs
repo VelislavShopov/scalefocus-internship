@@ -38,7 +38,7 @@ namespace UserAPI.Helpers
 
             var role = "user";
 
-            if (roles.Any(x => x.RoleId == 2))
+            if (roles.Any(x => x.RoleId == 1))
             {
                 role = "admin";
             }
