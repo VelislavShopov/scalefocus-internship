@@ -36,15 +36,27 @@ namespace UserAPI.Controllers
             _tokenService = tokenService;
         }
 
-
+        /// <summary>
+        /// Retrieves the list off all the users.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="ActionResult{ICollection}"/> containg a list of <see cref="User"/>/>
+        /// </returns>
         [HttpGet]
-        public async Task<ActionResult<List<User>>> GetUsersList()
+        public async Task<ActionResult<ICollection<User>>> GetUsersList()
         {
             return await _userService.GetAllUsers();
         }
 
+        /// <summary>
+        /// Creates a user.
+        /// </summary>
+        /// <param name="userDTO"></param>
+        /// <returns>
+        /// If the <see cref="User"/> is created successfully ut returns <see cref="Created"/>,
+        /// otherwise if there is fault in the data -> <see cref="BadRequest"/>
+        /// </returns>
         [HttpPost]
-
         public async Task<ActionResult> CreateUser(CreateUserDTO userDTO)
         {
             try
@@ -52,8 +64,8 @@ namespace UserAPI.Controllers
                 await _userService.CreateUser(userDTO);
                 return Created();
             }
-            catch (ArgumentException ex)
-            {
+            catch (Exception ex) when (ex is ArgumentNullException || ex is ArgumentException) 
+            {  
                 return BadRequest(ex.Message);
             }
             catch (Exception ex) 
@@ -62,6 +74,14 @@ namespace UserAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves a single user
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>
+        /// If there is a user with the given id -> <see cref="User"/>,
+        /// otherwise -> <see cref="NotFound"/>
+        /// </returns>
         [HttpGet]
         [Route("{id}")]
         public async Task<ActionResult> GetUser(Guid id)
@@ -80,6 +100,11 @@ namespace UserAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Deletes a user with the given id, only the same user can do it 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpDelete]
         [Authorize]
         [Route("{id}")]
@@ -91,11 +116,11 @@ namespace UserAPI.Controllers
                 await _userService.DeleteUser(id, loggedUserId);
                 return NoContent();
             }
-            catch (KeyNotFoundException ex)
+            catch (KeyNotFoundException)
             {
                 return NotFound("There is no user with the given id.");
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
                 return Unauthorized();
             }
@@ -104,8 +129,14 @@ namespace UserAPI.Controllers
                 return StatusCode(500,ex.Message);
             }
         }
-        //Редактиран е Login методът с токените.
-        //Логиката с refresh токените е готова, както и генерирането на токена.
+        
+        /// <summary>
+        /// The user logs in with username and password
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns>
+        /// If the credentials are correct -> <see cref="TokenResponseDTO"/> which contains both tokens
+        /// </returns>
         [HttpPost]
         [Route("login")]
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginUserDTO request)
