@@ -46,7 +46,10 @@ namespace UserAPI.Services
         // Create метод направен от Никола Гочев
         public async Task<User> CreateUser(CreateUserDTO user)
         {
-            // проверяваме дали паролата и потвържедението на парола съвпадат
+            if (user == null) 
+            {
+                throw new ArgumentNullException("Please provide credentials.");
+            }
 
             if (user.Password != user.ConfirmPassword)
             {
