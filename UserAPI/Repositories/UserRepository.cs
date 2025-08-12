@@ -12,49 +12,47 @@ using UserAPI.DTOs;
 using UserAPI.Models;
 namespace UserAPI.Repositories
 {
-    public class UserRepository : UserDbContext, IUserRepository
+    public class UserRepository : IUserRepository
     {
 
         private readonly IConfiguration _configuration;
+        private readonly UserDbContext _context;
 
-        public UserRepository(DbContextOptions<UserDbContext> options, IConfiguration configuration) : base(options)
+        public UserRepository(UserDbContext context, IConfiguration configuration)
         {
+            _context = context;
             _configuration = configuration;
         }
 
         public async Task<List<User>> GetAllUsers()
         {
-            return await Users.ToListAsync();
+            return await _context.Users.ToListAsync();
         }
 
         public async Task CreateUser(User user)
         {
-            await Users.AddAsync(user);
-            var role = await Roles.FirstAsync(x => x.Name == "user");
-            UserRoles.Add(new UserRole()
+            await _context.Users.AddAsync(user);
+            var role = await _context.Roles.FirstAsync(x => x.Name == "user");
+            _context.UserRoles.Add(new UserRole()
             {
                 UserId = user.Id,
                 RoleId = role.Id
             });
-            await SaveChangesAsync();
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteUser(Guid id)
         {
-            var user = await Users.FindAsync(id);
-            if (user == null)
-            {
-                throw new KeyNotFoundException();
-            }
+            var user = await GetUser(id);
 
-            Users.Remove(user);
-            await SaveChangesAsync();
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
 
         }
 
         public async Task<User> GetUser(Guid id)
         {
-            var user = await Users.FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
 
             if (user == null)
             {
@@ -66,27 +64,27 @@ namespace UserAPI.Repositories
 
         public async Task<User> GetUserByUsername(string username)
         {
-            var user = await Users.FirstOrDefaultAsync(u => u.Username == username);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             return user;
         }
 
         public async Task<User> GetUserByEmail(string email)
         {
-            var user = await Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             return user;
        }
 
         public async Task<List<UserRole>> GetRolesForUser(User user)
         {
-            var userRoles = await UserRoles.Where(x => x.UserId == user.Id).ToListAsync();
+            var userRoles = await _context.UserRoles.Where(x => x.UserId == user.Id).ToListAsync();
 
             return userRoles;
         }
 
         public async Task UpdateUser(User user)
         {
-            Users.Update(user);
-            await SaveChangesAsync();
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
         }
 
     }
