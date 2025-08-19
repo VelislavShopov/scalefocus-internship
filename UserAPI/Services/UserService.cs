@@ -1,5 +1,4 @@
-﻿using EmailService;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +10,8 @@ using System.Text;
 using UserAPI.DTOs;
 using UserAPI.Models;
 using UserAPI.Repositories;
+using ForgotPasswordEmailSender;
+using Microsoft.Extensions.Options;
 
 namespace UserAPI.Services
 {
@@ -20,16 +21,16 @@ namespace UserAPI.Services
 
         private readonly IConfiguration _configuration;
 
-        private readonly IEmailSender _emailSender;
-
         private readonly ITokenRepository _tokenRepository;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration, IEmailSender emailSender, ITokenRepository tokenRepository)
+        private readonly EmailConfiguration _emailConfiguration;
+
+        public UserService(IUserRepository userRepository, IConfiguration configuration, ITokenRepository tokenRepository, IOptions<EmailConfiguration> emailConf)
         {
             _userRepository = userRepository;
             _tokenRepository = tokenRepository;
             _configuration = configuration;
-            _emailSender = emailSender;
+            _emailConfiguration = emailConf.Value;
         }
 
         public async Task<List<User>> GetAllUsers()
@@ -138,11 +139,13 @@ namespace UserAPI.Services
         }
 
         // Забравена парола
-        public async Task<bool> ForgotPassword(string email, string baseUrl)
+        public async Task ForgotPassword(string email)
         {
             var user = await _userRepository.GetUserByEmail(email);
             if (user == null)
-                return false;
+            {
+                throw new KeyNotFoundException("No user found with the given email!");
+            }
 
             var tokenBytes = RandomNumberGenerator.GetBytes(64);
             var token = Convert.ToBase64String(tokenBytes);
@@ -153,42 +156,49 @@ namespace UserAPI.Services
                 PasswordResetTokenValue = token,
                 ExpiryTime = DateTime.UtcNow.AddMinutes(5)
             };
-            
+
             await _tokenRepository.CreatePasswordResetToken(passwordResetToken);
 
-            var callbackUrl = $"{baseUrl}?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
-
-            var message = new Message(
-                new[] { user.Email },
-                "Password Reset",
-                $"Please reset your password using this link: {callbackUrl}"
+            using var emailSender = new EmailSender(
+                _emailConfiguration.From,
+                _emailConfiguration.SmtpServer,
+                _emailConfiguration.Port,
+                _emailConfiguration.Username,
+                _emailConfiguration.Password
             );
-            await _emailSender.SendEmailAsync(message);
 
-            return true;
+            var callbackUrl = $"token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
+
+            IEnumerable<string> emails = [email];
+
+            await emailSender.SendEmail(emails, "Password Reset", callbackUrl);
         }
 
         // Ресет на парола
-        public async Task<bool> ResetPassword(string token, string newPassword)
+        public async Task ResetPassword(string token,string email, string newPassword)
         {
             var decodedToken = Uri.UnescapeDataString(token);
-
-            var passwordResetToken = await _tokenRepository.GetPasswordResetTokenByValue(decodedToken);
+            
+            var passwordResetToken = await _tokenRepository.GetPasswordResetTokenByValue(decodedToken, email);
+            if (passwordResetToken == null)
+            {
+                throw new ArgumentException("Invalid token.");
+            }
 
             var user = await GetUser(passwordResetToken.UserId);
             if (user == null)
-                return false;
+            {
+                throw new KeyNotFoundException("No such user!");
+            }
 
             var passwordHasher = new PasswordHasher<User>();
             var hashedPassword = passwordHasher.HashPassword(user, newPassword);
 
             user.PasswordHash = hashedPassword;
 
-            _tokenRepository.DeletePasswordResetToken(passwordResetToken);
+            await _tokenRepository.DeletePasswordResetToken(passwordResetToken);
 
             await _userRepository.UpdateUser(user);
-
-            return true;
         }
     }
 }

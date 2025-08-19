@@ -15,7 +15,7 @@ namespace UserAPI.Repositories
 
         Task CreatePasswordResetToken(PasswordResetToken newPasswordResetToken);
 
-        Task<PasswordResetToken?> GetPasswordResetTokenByValue(string token);
+        Task<PasswordResetToken?> GetPasswordResetTokenByValue(string token,string email);
 
         Task DeletePasswordResetToken(PasswordResetToken prt);
     }

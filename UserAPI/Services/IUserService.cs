@@ -19,8 +19,8 @@ namespace UserAPI.Services
 
         Task<string> ChangeUsername(string oldUsername, string newUsername, string email, string password);
 
-        Task<bool> ForgotPassword(string email, string baseUrl);
-        Task<bool> ResetPassword(string token, string newPassword);
+        Task ForgotPassword(string email);
+        Task ResetPassword(string token,string email, string newPassword);
 
 
     }

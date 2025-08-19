@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
-using EmailService;
 using UserAPI.Helpers;
+using UserAPI.Controllers;
+using UserAPI.Models;
+
 namespace UserAPI
 {
     public class Startup
@@ -25,7 +27,7 @@ namespace UserAPI
         {
 
             services.Configure<EmailConfiguration>(Configuration.GetSection("EmailConfiguration"));
-            services.AddScoped<IEmailSender, EmailSender>();
+
             services.AddControllers();
             services.AddControllersWithViews();
             services.AddEndpointsApiExplorer();

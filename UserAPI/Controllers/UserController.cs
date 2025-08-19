@@ -1,5 +1,4 @@
-﻿using EmailService;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,8 +18,6 @@ using UserAPI.Helpers;
 namespace UserAPI.Controllers
 
 {
-
-
     [ApiController]
     [Route("[controller]s")]
     public class UserController : ControllerBase
@@ -224,14 +221,20 @@ namespace UserAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest("Invalid request data.");
 
-            var baseUrl = "https://localhost:7264/reset-password";
-
-            var result = await _userService.ForgotPassword(request.Email!, baseUrl);
-
-            if (!result)
-                return BadRequest("Invalid request.");
-
-            return Ok("Password reset instructions have been sent to your email.");
+            try
+            {
+                await _userService.ForgotPassword(request.Email!);
+                return Ok("Password reset instructions have been sent to your email.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+            
         }
 
         [HttpPost("reset-password")]
@@ -240,12 +243,19 @@ namespace UserAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest("Invalid request data.");
 
-            var result = await _userService.ResetPassword(resetPassword.Token, resetPassword.newPassword);
-
-            if (!result)
-                return BadRequest("Invalid request.");
-
-            return Ok("Password reset successfully.");
+            try
+            {
+                await _userService.ResetPassword(resetPassword.Token, resetPassword.Email, resetPassword.newPassword);
+                return Ok("Password reset successfully.");
+            }
+            catch (Exception ex) when (ex is KeyNotFoundException || ex is ArgumentException)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
     }

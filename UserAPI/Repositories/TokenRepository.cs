@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using UserAPI.DTOs;
 using UserAPI.Models;
 
@@ -45,9 +46,16 @@ namespace UserAPI.Repositories
             await _context.PasswordResetTokens.AddAsync(token);
             await _context.SaveChangesAsync();
         }
-        public async Task<PasswordResetToken?> GetPasswordResetTokenByValue(string token)
+        public async Task<PasswordResetToken?> GetPasswordResetTokenByValue(string token,string email)
         {
-            var passwordresettoken = await _context.PasswordResetTokens.FirstOrDefaultAsync(x => x.PasswordResetTokenValue == token);
+            var tokensMatchingEmail = _context.PasswordResetTokens.Where(x => x.User.Email.Equals(email)).ToList();
+            if (tokensMatchingEmail == null) 
+            {
+                
+                throw new Exception("No tokens with the given email!");
+            }
+
+            var passwordresettoken = tokensMatchingEmail.FirstOrDefault(x => x.PasswordResetTokenValue == token);
             return passwordresettoken;
         }
 
